@@ -6,6 +6,7 @@ import com.estore.estore.dto.response.JwtResponse;
 import com.estore.estore.model.User;
 import com.estore.estore.model.Role; // Импортируем Role
 import com.estore.estore.security.JwtUtils;
+import com.estore.estore.security.JwtUtils;
 import com.estore.estore.security.UserPrincipal;
 import com.estore.estore.service.UserService;
 import jakarta.validation.Valid;

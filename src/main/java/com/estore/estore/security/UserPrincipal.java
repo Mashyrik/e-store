@@ -26,15 +26,15 @@ public class UserPrincipal implements UserDetails {
     }
 
     public static UserPrincipal create(User user) {
-        // ФИКС: Безопасное получение имени роли
         String roleName;
         if (user.getRole() != null) {
-            // Получаем имя роли через toString() вместо name()
-            roleName = user.getRole().toString();
+            roleName = user.getRole().name(); // "ROLE_ADMIN" или "ROLE_USER"
         } else {
-            // Роль по умолчанию, если не установлена
             roleName = "ROLE_USER";
         }
+
+        System.out.println("🔐 Создан UserPrincipal для: " + user.getUsername() +
+                ", роль: " + roleName + ", authority: " + roleName);
 
         List<GrantedAuthority> authorities = Collections.singletonList(
                 new SimpleGrantedAuthority(roleName)
