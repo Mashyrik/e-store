@@ -1,7 +1,11 @@
 package com.estore.estore.controller;
 
+import com.estore.estore.dto.request.CategoryRequest;
+import com.estore.estore.exception.BusinessException;
+import com.estore.estore.exception.ResourceNotFoundException;
 import com.estore.estore.model.Category;
 import com.estore.estore.service.CategoryService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,17 +32,22 @@ public class CategoryController {
     }
 
     @PostMapping
-    public Category createCategory(@RequestBody Category category) {
-        return categoryService.createCategory(category);
+    public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
+        try {
+            Category category = categoryService.createCategory(categoryRequest);
+            return ResponseEntity.ok(category);
+        } catch (RuntimeException e) {
+            throw new BusinessException(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category categoryDetails) {
+    public ResponseEntity<?> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest categoryRequest) {
         try {
-            Category updatedCategory = categoryService.updateCategory(id, categoryDetails);
+            Category updatedCategory = categoryService.updateCategory(id, categoryRequest);
             return ResponseEntity.ok(updatedCategory);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException(e.getMessage());
         }
     }
 
@@ -48,7 +57,7 @@ public class CategoryController {
             categoryService.deleteCategory(id);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            throw new ResourceNotFoundException(e.getMessage());
         }
     }
 }

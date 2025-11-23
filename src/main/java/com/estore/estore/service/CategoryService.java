@@ -1,5 +1,6 @@
 package com.estore.estore.service;
 
+import com.estore.estore.dto.request.CategoryRequest;
 import com.estore.estore.model.Category;
 import com.estore.estore.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,21 @@ public class CategoryService {
         return categoryRepository.findById(id);
     }
 
+    public Category createCategory(CategoryRequest categoryRequest) {
+        // Проверяем, нет ли уже категории с таким именем
+        if (categoryRepository.existsByName(categoryRequest.getName())) {
+            throw new RuntimeException("Category with name '" + categoryRequest.getName() + "' already exists");
+        }
+
+        // Создаем категорию из DTO
+        Category category = new Category();
+        category.setName(categoryRequest.getName());
+        category.setDescription(categoryRequest.getDescription());
+
+        return categoryRepository.save(category);
+    }
+
+    // Старый метод для обратной совместимости
     public Category createCategory(Category category) {
         // Проверяем, нет ли уже категории с таким именем
         if (categoryRepository.existsByName(category.getName())) {
@@ -30,6 +46,17 @@ public class CategoryService {
         return categoryRepository.save(category);
     }
 
+    public Category updateCategory(Long id, CategoryRequest categoryRequest) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+
+        category.setName(categoryRequest.getName());
+        category.setDescription(categoryRequest.getDescription());
+
+        return categoryRepository.save(category);
+    }
+
+    // Старый метод для обратной совместимости
     public Category updateCategory(Long id, Category categoryDetails) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));

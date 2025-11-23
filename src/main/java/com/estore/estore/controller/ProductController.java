@@ -1,7 +1,10 @@
 package com.estore.estore.controller;
 
+import com.estore.estore.dto.request.ProductRequest;
+import com.estore.estore.exception.BusinessException;
 import com.estore.estore.model.Product;
 import com.estore.estore.service.ProductService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,8 +46,13 @@ public class ProductController {
     }
 
     @PostMapping
-    public Product createProduct(@RequestBody Product product) {
-        return productService.createProduct(product);
+    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductRequest productRequest) {
+        try {
+            Product product = productService.createProduct(productRequest);
+            return ResponseEntity.ok(product);
+        } catch (RuntimeException e) {
+            throw new BusinessException(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
