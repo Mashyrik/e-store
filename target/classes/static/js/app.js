@@ -101,64 +101,144 @@ class App {
     static async loadCategories() {
         try {
             const categories = await CategoryService.getAll();
-            const container = document.getElementById('categories-container');
-            
-            container.innerHTML = categories.map(category => `
-                <div class="category-card" onclick="App.showCategoryProducts(${category.id})">
-                    <div class="category-image">
-                        ${this.getCategoryIcon(category.name)}
-                    </div>
-                    <div class="category-info">
-                        <h3>${category.name}</h3>
-                        <p>${category.description || 'Современные устройства'}</p>
-                    </div>
-                </div>
-            `).join('');
+            this.renderCategories(categories);
         } catch (error) {
-            this.showError('categories-container', 'Не удалось загрузить категории');
+            console.log('Using mock categories data');
+            // Временные данные для тестирования
+            const mockCategories = [
+                { id: 1, name: 'Смартфоны', description: 'Мобильные телефоны' },
+                { id: 2, name: 'Ноутбуки', description: 'Портативные компьютеры' },
+                { id: 3, name: 'Телевизоры', description: 'Телевизоры и мониторы' },
+                { id: 4, name: 'Аудиотехника', description: 'Наушники и колонки' },
+                { id: 5, name: 'Гаджеты', description: 'Умные устройства' },
+                { id: 6, name: 'Аксессуары', description: 'Чехлы и зарядные устройства' }
+            ];
+            this.renderCategories(mockCategories);
         }
+    }
+
+    static renderCategories(categories) {
+        const container = document.getElementById('categories-container');
+        if (!container) return;
+        
+        container.innerHTML = categories.map(category => `
+            <div class="category-card" onclick="App.showCategoryProducts(${category.id})">
+                <div class="category-image">
+                    ${this.getCategoryIcon(category.name)}
+                </div>
+                <div class="category-info">
+                    <h3>${category.name}</h3>
+                    <p>${category.description || 'Современные устройства'}</p>
+                </div>
+            </div>
+        `).join('');
     }
 
     static async loadProducts() {
         try {
             const products = await ProductService.getAll();
-            const container = document.getElementById('products-container');
-            const previewProducts = products.slice(0, 6);
-            
-            container.innerHTML = previewProducts.map(product => `
-                <div class="product-card">
-                    <div class="product-image">
-                        ${this.getProductIcon(product.category?.name)}
-                    </div>
-                    <div class="product-info">
-                        <h3>${product.name}</h3>
-                        <p class="product-price">${product.price} ₽</p>
-                        <p class="product-model">${product.model}</p>
-                        <p class="product-stock">В наличии: ${product.stockQuantity} шт.</p>
-                        <button class="cta-button add-to-cart-btn" 
-                                data-product-id="${product.id}"
-                                style="width: 100%; margin-top: 1rem;"
-                                ${product.stockQuantity === 0 ? 'disabled' : ''}>
-                            ${product.stockQuantity === 0 ? 'Нет в наличии' : 'В корзину'}
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            this.renderProducts(products);
         } catch (error) {
-            this.showError('products-container', 'Не удалось загрузить товары');
+            console.log('Using mock products data');
+            // Временные данные для тестирования
+            const mockProducts = [
+                { 
+                    id: 1, 
+                    name: 'iPhone 15 Pro', 
+                    price: 99990, 
+                    model: 'A2848', 
+                    stockQuantity: 10,
+                    category: { name: 'Смартфоны' },
+                    description: 'Новейший смартфон от Apple'
+                },
+                { 
+                    id: 2, 
+                    name: 'Samsung Galaxy S24', 
+                    price: 89990, 
+                    model: 'SM-S921B', 
+                    stockQuantity: 8,
+                    category: { name: 'Смартфоны' },
+                    description: 'Флагманский смартфон от Samsung'
+                },
+                { 
+                    id: 3, 
+                    name: 'MacBook Air M2', 
+                    price: 129990, 
+                    model: 'M2', 
+                    stockQuantity: 5,
+                    category: { name: 'Ноутбуки' },
+                    description: 'Ультратонкий ноутбук от Apple'
+                },
+                { 
+                    id: 4, 
+                    name: 'Sony WH-1000XM5', 
+                    price: 29990, 
+                    model: 'WH-1000XM5', 
+                    stockQuantity: 15,
+                    category: { name: 'Аудиотехника' },
+                    description: 'Беспроводные наушники с шумоподавлением'
+                },
+                { 
+                    id: 5, 
+                    name: 'Apple Watch Series 9', 
+                    price: 39990, 
+                    model: 'A2976', 
+                    stockQuantity: 12,
+                    category: { name: 'Гаджеты' },
+                    description: 'Умные часы от Apple'
+                },
+                { 
+                    id: 6, 
+                    name: 'Samsung 55" QLED TV', 
+                    price: 79990, 
+                    model: 'QE55Q80C', 
+                    stockQuantity: 3,
+                    category: { name: 'Телевизоры' },
+                    description: 'Телевизор с технологией QLED'
+                }
+            ];
+            this.renderProducts(mockProducts);
         }
+    }
+
+    static renderProducts(products) {
+        const container = document.getElementById('products-container');
+        if (!container) return;
+        
+        const previewProducts = products.slice(0, 6);
+        
+        container.innerHTML = previewProducts.map(product => `
+            <div class="product-card">
+                <div class="product-image">
+                    ${this.getProductIcon(product.category?.name)}
+                </div>
+                <div class="product-info">
+                    <h3>${product.name}</h3>
+                    <p class="product-price">${product.price} ₽</p>
+                    <p class="product-model">${product.model}</p>
+                    <p class="product-stock">В наличии: ${product.stockQuantity} шт.</p>
+                    <button class="cta-button add-to-cart-btn" 
+                            data-product-id="${product.id}"
+                            style="width: 100%; margin-top: 1rem;"
+                            ${product.stockQuantity === 0 ? 'disabled' : ''}>
+                        ${product.stockQuantity === 0 ? 'Нет в наличии' : 'В корзину'}
+                    </button>
+                </div>
+            </div>
+        `).join('');
     }
 
     static renderCartItems() {
         const container = document.getElementById('cart-items');
+        if (!container) return;
         
         if (cart.items.length === 0) {
             container.innerHTML = `
                 <div class="empty-cart">
                     <div class="empty-cart-icon">🛒</div>
-                    <h3>Ваша корзина пуста</h3>
-                    <p>Добавьте товары из каталога, чтобы сделать заказ</p>
-                    <a href="#products" class="continue-shopping">Продолжить покупки</a>
+                    <h3>В корзине пусто</h3>
+                    <p>Загляните на главную, чтобы выбрать товары или найдите нужное в поиске</p>
+                    <a href="#home" class="continue-shopping">Перейти на главную</a>
                 </div>
             `;
             return;
@@ -190,6 +270,8 @@ class App {
 
     static renderCartSummary() {
         const container = document.getElementById('cart-summary');
+        if (!container) return;
+        
         const totalPrice = cart.getTotalPrice();
         const totalItems = cart.getTotalItems();
         const shippingPrice = cart.getShippingPrice();
@@ -222,27 +304,98 @@ class App {
     }
 
     static async addProductToCart(productId) {
-        try {
-            const products = await ProductService.getAll();
-            const product = products.find(p => p.id === productId);
-            
-            if (product) {
-                if (product.stockQuantity > 0) {
-                    cart.addItem(product, 1);
-                    // Обновляем корзину, если мы на странице корзины
-                    if (window.location.hash === '#cart') {
-                        this.renderCartItems();
-                        this.renderCartSummary();
-                    }
-                } else {
-                    alert('Этот товар временно отсутствует на складе');
-                }
-            }
-        } catch (error) {
-            console.error('Error adding product to cart:', error);
-            alert('Ошибка при добавлении товара в корзину');
+    try {
+        console.log('🛒 addProductToCart called with ID:', productId);
+        
+        // Простые тестовые данные
+        const testProduct = {
+            id: productId,
+            name: 'Тестовый товар ' + productId,
+            price: 1000 * productId,
+            model: 'TEST' + productId,
+            stockQuantity: 10,
+            category: { name: 'Тест' },
+            imageUrl: ''
+        };
+        
+        console.log('🛒 Test product:', testProduct);
+        
+        // Пробуем добавить в корзину
+        const success = cart.addItem(testProduct, 1);
+        console.log('🛒 cart.addItem result:', success);
+        
+        if (success) {
+            console.log('✅ Товар добавлен! Корзина:', cart.items);
+        } else {
+            console.error('❌ Ошибка при добавлении товара');
         }
+        
+    } catch (error) {
+        console.error('❌ Unexpected error:', error);
     }
+}
+
+// Добавьте этот метод для поиска товара в временных данных
+static findProductInMockData(productId) {
+    const mockProducts = [
+        { 
+            id: 1, 
+            name: 'iPhone 15 Pro', 
+            price: 99990, 
+            model: 'A2848', 
+            stockQuantity: 10,
+            category: { name: 'Смартфоны' },
+            description: 'Новейший смартфон от Apple'
+        },
+        { 
+            id: 2, 
+            name: 'Samsung Galaxy S24', 
+            price: 89990, 
+            model: 'SM-S921B', 
+            stockQuantity: 8,
+            category: { name: 'Смартфоны' },
+            description: 'Флагманский смартфон от Samsung'
+        },
+        { 
+            id: 3, 
+            name: 'MacBook Air M2', 
+            price: 129990, 
+            model: 'M2', 
+            stockQuantity: 5,
+            category: { name: 'Ноутбуки' },
+            description: 'Ультратонкий ноутбук от Apple'
+        },
+        { 
+            id: 4, 
+            name: 'Sony WH-1000XM5', 
+            price: 29990, 
+            model: 'WH-1000XM5', 
+            stockQuantity: 15,
+            category: { name: 'Аудиотехника' },
+            description: 'Беспроводные наушники с шумоподавлением'
+        },
+        { 
+            id: 5, 
+            name: 'Apple Watch Series 9', 
+            price: 39990, 
+            model: 'A2976', 
+            stockQuantity: 12,
+            category: { name: 'Гаджеты' },
+            description: 'Умные часы от Apple'
+        },
+        { 
+            id: 6, 
+            name: 'Samsung 55" QLED TV', 
+            price: 79990, 
+            model: 'QE55Q80C', 
+            stockQuantity: 3,
+            category: { name: 'Телевизоры' },
+            description: 'Телевизор с технологией QLED'
+        }
+    ];
+    
+    return mockProducts.find(p => p.id === productId);
+}
 
     static getCategoryIcon(categoryName) {
         const icons = {
@@ -283,16 +436,18 @@ class App {
         const profileLink = document.getElementById('profile-link');
         
         if (token) {
-            loginLink.style.display = 'none';
-            profileLink.style.display = 'block';
+            if (loginLink) loginLink.style.display = 'none';
+            if (profileLink) profileLink.style.display = 'block';
         } else {
-            loginLink.style.display = 'block';
-            profileLink.style.display = 'none';
+            if (loginLink) loginLink.style.display = 'block';
+            if (profileLink) profileLink.style.display = 'none';
         }
     }
 
     static showError(containerId, message) {
         const container = document.getElementById(containerId);
+        if (!container) return;
+        
         container.innerHTML = `
             <div style="text-align: center; grid-column: 1/-1; padding: 2rem;">
                 <p style="color: #666;">${message}</p>
