@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                        .requestMatchers("/api/cart/**").authenticated() // Доступ к корзине только для авторизованных
 
                         // Админ endpoints - только ROLE_ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
