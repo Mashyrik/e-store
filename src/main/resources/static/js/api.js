@@ -1,145 +1,76 @@
-// js/api.js
-
-const API_BASE = 'http://localhost:8080/api';
+// js/services/api.js
+const API_BASE_URL = 'http://localhost:8080/api';
 
 class ApiService {
-    static async get(url) {
+    static async request(endpoint, options = {}) {
         try {
             const token = localStorage.getItem('token');
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
             
-            const response = await fetch(`${API_BASE}${url}`, { headers });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
             }
             
-            return await response.json();
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    }
-
-    static async post(url, data) {
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+            console.log(`API Request: ${endpoint}`, options);
             
-            const response = await fetch(`${API_BASE}${url}`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    }
-
-    static async put(url, data) {
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            
-            const response = await fetch(`${API_BASE}${url}`, {
-                method: 'PUT',
-                headers,
-                body: JSON.stringify(data)
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.error('API request failed:', error);
-            throw error;
-        }
-    }
-
-    static async delete(url) {
-        try {
-            const token = localStorage.getItem('token');
-            const headers = { 'Content-Type': 'application/json' };
-            if (token) headers['Authorization'] = `Bearer ${token}`;
-            
-            const response = await fetch(`${API_BASE}${url}`, {
-                method: 'DELETE',
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
                 headers
             });
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            console.log(`API Response status: ${response.status}`);
+            
+            // Если ответ 204 (No Content), возвращаем null
+            if (response.status === 204) {
+                return null;
             }
             
-            return await response.json();
+            // Пробуем распарсить JSON
+            let data;
+            try {
+                data = await response.json();
+            } catch (e) {
+                data = null;
+            }
+            
+            if (!response.ok) {
+                const error = data?.message || `HTTP ${response.status}`;
+                throw new Error(error);
+            }
+            
+            return data;
+            
         } catch (error) {
-            console.error('API request failed:', error);
+            console.error('API Request failed:', error);
             throw error;
         }
     }
+    
+    static async get(endpoint) {
+        return this.request(endpoint, { method: 'GET' });
+    }
+    
+    static async post(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+    
+    static async put(endpoint, data) {
+        return this.request(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+    
+    static async delete(endpoint) {
+        return this.request(endpoint, { method: 'DELETE' });
+    }
 }
 
-// Сервисы для работы с API
-const CategoryService = {
-    async getAll() {
-        return await ApiService.get('/categories');
-    },
-    
-    async getById(id) {
-        return await ApiService.get(`/categories/${id}`);
-    }
-};
-
-const ProductService = {
-    async getAll() {
-        return await ApiService.get('/products');
-    },
-    
-    async getById(id) {
-        return await ApiService.get(`/products/${id}`);
-    },
-    
-    async getByCategory(categoryId) {
-        return await ApiService.get(`/products/category/${categoryId}`);
-    },
-    
-    async search(query) {
-        return await ApiService.get(`/products/search?query=${query}`);
-    }
-};
-
-const AuthService = {
-    async login(credentials) {
-        return await ApiService.post('/auth/login', credentials);
-    },
-    
-    async register(userData) {
-        return await ApiService.post('/auth/register', userData);
-    }
-};
-
-const OrderService = {
-    async create(orderData) {
-        return await ApiService.post('/orders', orderData);
-    },
-    
-    async getByUser(userId) {
-        return await ApiService.get(`/orders/user/${userId}`);
-    },
-    
-    async getAll() {
-        return await ApiService.get('/orders');
-    }
-};
+// Экспортируем для использования
+window.ApiService = ApiService;
