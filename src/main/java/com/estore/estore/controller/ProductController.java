@@ -6,6 +6,10 @@ import com.estore.estore.model.Product;
 import com.estore.estore.service.ProductService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,9 +22,60 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    // Старый метод для обратной совместимости
     @GetMapping
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
+    }
+
+    // НОВЫЙ: Пагинация всех товаров
+    @GetMapping("/page")
+    public ResponseEntity<Page<Product>> getProductsPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction) {
+
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        Page<Product> productsPage = productService.getAllProducts(pageable);
+        return ResponseEntity.ok(productsPage);
+    }
+
+    // НОВЫЙ: Пагинация с поиском
+    @GetMapping("/search/page")
+    public ResponseEntity<Page<Product>> searchProductsPage(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        Page<Product> productsPage = productService.searchProducts(query, pageable);
+        return ResponseEntity.ok(productsPage);
+    }
+
+    // НОВЫЙ: Пагинация по категории
+    @GetMapping("/category/{categoryId}/page")
+    public ResponseEntity<Page<Product>> getProductsByCategoryPage(
+            @PathVariable Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "name") String sortBy,
+            @RequestParam(defaultValue = "asc") String direction) {
+
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("asc")
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+
+        Page<Product> productsPage = productService.getProductsByCategory(categoryId, pageable);
+        return ResponseEntity.ok(productsPage);
     }
 
     @GetMapping("/{id}")

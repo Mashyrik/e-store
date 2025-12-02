@@ -6,6 +6,8 @@ import com.estore.estore.model.Product;
 import com.estore.estore.repository.CategoryRepository;
 import com.estore.estore.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,10 +22,27 @@ public class ProductService {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    // Старый метод для обратной совместимости
     public List<Product> getAllProducts() {
         return productRepository.findAllByOrderByCreatedAtDesc();
     }
 
+    // НОВЫЙ: Пагинация всех товаров
+    public Page<Product> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
+    }
+
+    // НОВЫЙ: Пагинация с поиском
+    public Page<Product> searchProducts(String query, Pageable pageable) {
+        return productRepository.searchProductsPage(query, pageable);
+    }
+
+    // НОВЫЙ: Пагинация товаров по категории
+    public Page<Product> getProductsByCategory(Long categoryId, Pageable pageable) {
+        return productRepository.findByCategoryId(categoryId, pageable);
+    }
+
+    // Существующие методы остаются
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
     }
@@ -41,16 +60,13 @@ public class ProductService {
     }
 
     public Product createProduct(ProductRequest productRequest) {
-        // Проверяем, нет ли уже продукта с такой моделью
         if (productRepository.existsByModel(productRequest.getModel())) {
             throw new RuntimeException("Product with model '" + productRequest.getModel() + "' already exists");
         }
 
-        // Находим категорию
         Category category = categoryRepository.findById(productRequest.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + productRequest.getCategoryId()));
 
-        // Создаем продукт из DTO
         Product product = new Product();
         product.setName(productRequest.getName());
         product.setDescription(productRequest.getDescription());
@@ -62,9 +78,8 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    // Старый метод для обратной совместимости (если нужен)
+    // Старый метод для обратной совместимости
     public Product createProduct(Product product) {
-        // Проверяем, нет ли уже продукта с такой моделью
         if (productRepository.existsByModel(product.getModel())) {
             throw new RuntimeException("Product with model '" + product.getModel() + "' already exists");
         }
@@ -75,7 +90,6 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
 
-        // Находим категорию если она изменилась
         if (!product.getCategory().getId().equals(productRequest.getCategoryId())) {
             Category category = categoryRepository.findById(productRequest.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Category not found with id: " + productRequest.getCategoryId()));

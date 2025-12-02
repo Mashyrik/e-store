@@ -54,7 +54,8 @@ public class SecurityConfig {
 
                         // Админ endpoints - только ROLE_ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
+                        .requestMatchers("/api/orders").authenticated() // Заказы для авторизованных пользователей
+                        .requestMatchers("/api/orders/all").hasRole("ADMIN") // Все заказы только для админа
                         // Product management - только ROLE_ADMIN
                         .requestMatchers(HttpMethod.POST, "/api/products").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")

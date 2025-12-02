@@ -49,6 +49,9 @@ public class OrderItem {
 
     // Вспомогательный метод для подсчета суммы
     public BigDecimal getSubTotal() {
-        return price.multiply(BigDecimal.valueOf(quantity));
+        if (price != null && quantity != null) {
+            return price.multiply(BigDecimal.valueOf(quantity));
+        }
+        return BigDecimal.ZERO;
     }
 }

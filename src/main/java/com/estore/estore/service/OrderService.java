@@ -1,26 +1,31 @@
 package com.estore.estore.service;
 
+import com.estore.estore.dto.request.OrderRequest;
+import com.estore.estore.dto.response.CartItemResponse;
+import com.estore.estore.dto.response.CartResponse;
+import com.estore.estore.dto.response.OrderResponse;
+import com.estore.estore.exception.BusinessException;
+import com.estore.estore.exception.ResourceNotFoundException;
 import com.estore.estore.model.*;
 import com.estore.estore.repository.OrderRepository;
-import com.estore.estore.repository.OrderItemRepository;
 import com.estore.estore.repository.ProductRepository;
 import com.estore.estore.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class OrderService {
 
     @Autowired
     private OrderRepository orderRepository;
-
-    @Autowired
-    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -28,75 +33,117 @@ public class OrderService {
     @Autowired
     private ProductRepository productRepository;
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAllByOrderByCreatedAtDesc();
+    @Autowired
+    private CartService cartService;
+
+    // Получить текущего пользователя
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
     }
 
-    public Optional<Order> getOrderById(Long id) {
-        return orderRepository.findById(id);
-    }
+    // Создать заказ из корзины
+    public OrderResponse createOrderFromCart(OrderRequest orderRequest) {
+        User user = getCurrentUser();
 
-    public List<Order> getOrdersByUser(Long userId) {
-        return orderRepository.findByUserId(userId);
-    }
+        // Получаем корзину пользователя
+        CartResponse cart = cartService.getCart();
 
-    public List<Order> getOrdersByStatus(Order.OrderStatus status) {
-        return orderRepository.findByStatus(status);
-    }
+        if (cart.getTotalItems() == 0) {
+            throw new BusinessException("Cart is empty. Cannot create order.");
+        }
 
-    @Transactional
-    public Order createOrder(Long userId, List<OrderItem> orderItems) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
+        // Проверяем наличие всех товаров
+        for (CartItemResponse item : cart.getItems()) {
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.getProductId()));
 
+            if (product.getStockQuantity() < item.getQuantity()) {
+                throw new BusinessException("Not enough stock for product: " + product.getName() +
+                        ". Available: " + product.getStockQuantity() + ", Requested: " + item.getQuantity());
+            }
+        }
+
+        // Создаем заказ
         Order order = new Order();
         order.setUser(user);
+        order.setShippingAddress(orderRequest.getShippingAddress());
+        order.setNotes(orderRequest.getNotes());
         order.setStatus(Order.OrderStatus.PENDING);
 
-        // Рассчитываем общую сумму
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        // Добавляем товары из корзины в заказ
+        for (CartItemResponse cartItem : cart.getItems()) {
+            Product product = productRepository.findById(cartItem.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + cartItem.getProductId()));
 
-        for (OrderItem item : orderItems) {
-            Product product = productRepository.findById(item.getProduct().getId())
-                    .orElseThrow(() -> new RuntimeException("Product not found with id: " + item.getProduct().getId()));
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPrice(product.getPrice()); // Цена на момент заказа
 
-            // Проверяем наличие товара
-            if (product.getStockQuantity() < item.getQuantity()) {
-                throw new RuntimeException("Not enough stock for product: " + product.getName());
-            }
+            order.addOrderItem(orderItem);
 
-            // Устанавливаем цену на момент заказа
-            item.setPrice(product.getPrice());
-            item.setOrder(order);
-
-            totalAmount = totalAmount.add(item.getSubTotal());
-
-            // Резервируем товар (уменьшаем количество)
-            product.setStockQuantity(product.getStockQuantity() - item.getQuantity());
+            // Уменьшаем количество товара на складе
+            product.setStockQuantity(product.getStockQuantity() - cartItem.getQuantity());
             productRepository.save(product);
         }
 
-        order.setTotalAmount(totalAmount);
+        // Рассчитываем общую сумму
+        order.setTotalAmount(order.calculateTotalAmount());
+
+        // Сохраняем заказ
         Order savedOrder = orderRepository.save(order);
 
-        // Сохраняем items
-        orderItemRepository.saveAll(orderItems);
+        // Очищаем корзину после создания заказа
+        cartService.clearCart();
 
-        return savedOrder;
+        return OrderResponse.fromOrder(savedOrder);
     }
 
-    @Transactional
-    public Order updateOrderStatus(Long orderId, Order.OrderStatus status) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
+    // Получить все заказы текущего пользователя
+    public List<OrderResponse> getUserOrders() {
+        User user = getCurrentUser();
+        List<Order> orders = orderRepository.findByUserOrderByCreatedAtDesc(user);
 
-        order.setStatus(status);
-        return orderRepository.save(order);
+        return orders.stream()
+                .map(OrderResponse::fromOrder)
+                .collect(Collectors.toList());
     }
 
-    public void deleteOrder(Long orderId) {
+    // Получить заказ по ID (только свой заказ)
+    public OrderResponse getOrderById(Long orderId) {
+        User user = getCurrentUser();
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + orderId));
-        orderRepository.delete(order);
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // Проверяем, что заказ принадлежит пользователю
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new BusinessException("You don't have permission to view this order");
+        }
+
+        return OrderResponse.fromOrder(order);
+    }
+
+    // Получить все заказы (для администратора)
+    public List<OrderResponse> getAllOrders() {
+        List<Order> orders = orderRepository.findAllByOrderByCreatedAtDesc();
+
+        return orders.stream()
+                .map(OrderResponse::fromOrder)
+                .collect(Collectors.toList());
+    }
+
+    // Обновить статус заказа (для администратора)
+    public OrderResponse updateOrderStatus(Long orderId, Order.OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        order.setStatus(newStatus);
+        Order updatedOrder = orderRepository.save(order);
+
+        return OrderResponse.fromOrder(updatedOrder);
     }
 }

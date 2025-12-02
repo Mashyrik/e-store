@@ -1,3 +1,4 @@
+// В OrderRepository.java должны быть эти методы:
 package com.estore.estore.repository;
 
 import com.estore.estore.model.Order;
@@ -9,8 +10,8 @@ import java.util.List;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByUser(User user);
+    List<Order> findByUserOrderByCreatedAtDesc(User user);
     List<Order> findByUserId(Long userId);
-    List<Order> findByStatus(Order.OrderStatus status);
     List<Order> findAllByOrderByCreatedAtDesc();
+    List<Order> findByStatus(Order.OrderStatus status);
 }

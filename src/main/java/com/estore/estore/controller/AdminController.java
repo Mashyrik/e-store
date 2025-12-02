@@ -8,19 +8,19 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     @GetMapping("/test")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')") // ✅ УЖЕ ПРАВИЛЬНО
     public String adminTest() {
         return "✅ Admin endpoint работает! У вас есть права администратора.";
     }
 
     @GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')") // ✅ УЖЕ ПРАВИЛЬНО
     public String getUsers() {
         return "Список пользователей (только для админов)";
     }
 
     @GetMapping("/stats")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')") // ✅ УЖЕ ПРАВИЛЬНО
     public String getStats() {
         return "Статистика магазина (только для админов)";
     }

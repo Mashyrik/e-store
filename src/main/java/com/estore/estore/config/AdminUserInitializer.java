@@ -19,7 +19,9 @@ public class AdminUserInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Создаем администратора
+        System.out.println("=== ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЕЙ ===");
+
+        // Создаем администратора, если он не существует
         if (userRepository.findByUsername("admin").isEmpty()) {
             User admin = new User();
             admin.setUsername("admin");
@@ -27,10 +29,12 @@ public class AdminUserInitializer implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode("admin123"));
             admin.setRole(Role.ROLE_ADMIN);
             userRepository.save(admin);
-            System.out.println("✅ Администратор создан: admin / admin123, роль: " + admin.getRole());
+            System.out.println("✅ Администратор создан: admin / admin123");
+        } else {
+            System.out.println("👑 Администратор уже существует");
         }
 
-        // Создаем тестового пользователя
+        // Создаем тестового пользователя, если он не существует
         if (userRepository.findByUsername("user").isEmpty()) {
             User user = new User();
             user.setUsername("user");
@@ -38,7 +42,15 @@ public class AdminUserInitializer implements CommandLineRunner {
             user.setPassword(passwordEncoder.encode("user123"));
             user.setRole(Role.ROLE_USER);
             userRepository.save(user);
-            System.out.println("✅ Пользователь создан: user / user123, роль: " + user.getRole());
+            System.out.println("✅ Пользователь создан: user / user123");
+        } else {
+            System.out.println("👤 Пользователь уже существует");
         }
+
+        // Проверяем количество пользователей в системе
+        long userCount = userRepository.count();
+        System.out.println("📊 Всего пользователей в системе: " + userCount);
+
+        System.out.println("=== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА ===");
     }
 }
