@@ -1,4 +1,4 @@
-// js/app.js - ПОЛНАЯ РАБОЧАЯ ВЕРСИЯ С КАТЕГОРИЯМИ
+// js/app.js - С АВТОРИЗАЦИЕЙ БЕЗ ПОЛОМОК
 
 // Глобальная корзина
 let cart = {
@@ -104,6 +104,158 @@ let cart = {
     }
 };
 
+// Система аутентификации
+const Auth = {
+    // Текущий пользователь
+    currentUser: null,
+    
+    // Инициализация
+    init() {
+        this.loadUser();
+        this.updateAuthUI();
+    },
+    
+    // Загрузка пользователя из localStorage
+    loadUser() {
+        try {
+            const saved = localStorage.getItem('estore_user');
+            this.currentUser = saved ? JSON.parse(saved) : null;
+            return this.currentUser;
+        } catch (error) {
+            console.error('Ошибка загрузки пользователя:', error);
+            this.currentUser = null;
+            return null;
+        }
+    },
+    
+    // Сохранение пользователя
+    saveUser(user) {
+        try {
+            localStorage.setItem('estore_user', JSON.stringify(user));
+            this.currentUser = user;
+            this.updateAuthUI();
+            return true;
+        } catch (error) {
+            console.error('Ошибка сохранения пользователя:', error);
+            return false;
+        }
+    },
+    
+    // Выход
+    logout() {
+        this.currentUser = null;
+        localStorage.removeItem('estore_user');
+        this.updateAuthUI();
+        alert('Вы вышли из системы');
+        window.location.hash = '#home';
+    },
+    
+    // Регистрация
+    register(email, password, name) {
+        // Проверяем данные
+        if (!email || !password || !name) {
+            return { success: false, message: 'Все поля обязательны для заполнения' };
+        }
+        
+        if (password.length < 6) {
+            return { success: false, message: 'Пароль должен быть не менее 6 символов' };
+        }
+        
+        // Проверяем email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return { success: false, message: 'Введите корректный email' };
+        }
+        
+        // Проверяем, существует ли пользователь (демо-версия)
+        const users = this.getUsers();
+        if (users.find(u => u.email === email)) {
+            return { success: false, message: 'Пользователь с таким email уже существует' };
+        }
+        
+        // Создаем нового пользователя
+        const newUser = {
+            id: Date.now(),
+            email: email,
+            name: name,
+            password: btoa(password), // В реальном приложении используйте хеширование!
+            registrationDate: new Date().toISOString(),
+            orders: []
+        };
+        
+        // Сохраняем
+        users.push(newUser);
+        localStorage.setItem('estore_users', JSON.stringify(users));
+        this.saveUser(newUser);
+        
+        return { success: true, message: 'Регистрация успешна!' };
+    },
+    
+    // Вход
+    login(email, password) {
+        if (!email || !password) {
+            return { success: false, message: 'Введите email и пароль' };
+        }
+        
+        const users = this.getUsers();
+        const user = users.find(u => u.email === email);
+        
+        if (!user) {
+            return { success: false, message: 'Пользователь не найден' };
+        }
+        
+        // Проверяем пароль (демо-версия)
+        if (btoa(password) !== user.password) {
+            return { success: false, message: 'Неверный пароль' };
+        }
+        
+        // Сохраняем сессию (без пароля)
+        const { password: _, ...userWithoutPassword } = user;
+        this.saveUser(userWithoutPassword);
+        
+        return { success: true, message: 'Вход выполнен успешно!' };
+    },
+    
+    // Получение всех пользователей
+    getUsers() {
+        try {
+            const users = localStorage.getItem('estore_users');
+            return users ? JSON.parse(users) : [];
+        } catch (error) {
+            console.error('Ошибка загрузки пользователей:', error);
+            return [];
+        }
+    },
+    
+    // Обновление UI в зависимости от авторизации
+    updateAuthUI() {
+        const loginBtn = document.getElementById('loginBtn');
+        const userMenu = document.getElementById('userMenu');
+        const userName = document.getElementById('userName');
+        
+        if (loginBtn && userMenu && userName) {
+            if (this.currentUser) {
+                loginBtn.style.display = 'none';
+                userMenu.style.display = 'flex';
+                userName.textContent = this.currentUser.name;
+            } else {
+                loginBtn.style.display = 'block';
+                userMenu.style.display = 'none';
+            }
+        }
+    },
+    
+    // Проверка авторизации
+    isLoggedIn() {
+        return this.currentUser !== null;
+    },
+    
+    // Получение имени пользователя
+    getUserName() {
+        return this.currentUser ? this.currentUser.name : 'Гость';
+    }
+};
+
 // Основное приложение
 const App = {
     // Демо-данные товаров
@@ -117,6 +269,9 @@ const App = {
     // Текущая выбранная категория
     currentCategory: null,
     
+    // Режим страницы авторизации (login/register)
+    authMode: 'login',
+    
     // Инициализация
     init() {
         console.log('🚀 E-Store запущен');
@@ -126,6 +281,9 @@ const App = {
         
         // Инициализируем корзину
         cart.init();
+        
+        // Инициализируем авторизацию
+        Auth.init();
         
         // Настраиваем меню
         this.setupMenu();
@@ -149,6 +307,15 @@ const App = {
             menuToggle.addEventListener('click', () => {
                 navLinks.classList.toggle('active');
                 console.log('🍔 Меню переключено');
+            });
+        }
+        
+        // Обработчик кнопки выхода
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                Auth.logout();
             });
         }
     },
@@ -206,12 +373,6 @@ const App = {
                 this.loadPage();
             }
             
-            if (e.target.id === 'logoutBtn') {
-                localStorage.removeItem('token');
-                alert('Вы вышли из системы');
-                window.location.hash = '#home';
-            }
-            
             if (e.target.id === 'clearCartBtn') {
                 if (confirm('Очистить корзину?')) {
                     cart.clear();
@@ -236,6 +397,30 @@ const App = {
                 if (category) {
                     this.filterByCategory(category);
                 }
+            }
+            
+            // Обработка переключения режима авторизации
+            if (e.target.id === 'switchToRegister' || e.target.classList.contains('switch-to-register')) {
+                e.preventDefault();
+                this.authMode = 'register';
+                this.loadPage();
+            }
+            
+            if (e.target.id === 'switchToLogin' || e.target.classList.contains('switch-to-login')) {
+                e.preventDefault();
+                this.authMode = 'login';
+                this.loadPage();
+            }
+            
+            // Обработка отправки форм
+            if (e.target.id === 'loginSubmitBtn') {
+                e.preventDefault();
+                this.handleLogin();
+            }
+            
+            if (e.target.id === 'registerSubmitBtn') {
+                e.preventDefault();
+                this.handleRegister();
             }
         });
     },
@@ -267,7 +452,7 @@ const App = {
                     this.loadCategoriesPage(content);
                     break;
                 case 'login':
-                    this.loadLoginPage(content);
+                    this.loadAuthPage(content);
                     break;
                 default:
                     this.loadHomePage(content);
@@ -456,9 +641,8 @@ const App = {
         }, 100);
     },
     
-    // Страница категорий (НОВАЯ РАБОЧАЯ ВЕРСИЯ)
+    // Страница категорий
     loadCategoriesPage(container) {
-        // Получаем все категории с подсчетом товаров
         const categories = this.getCategoriesWithCount();
         const popularProducts = this.demoProducts.slice(0, 4);
         
@@ -531,6 +715,176 @@ const App = {
                 </div>
             </section>
         `;
+    },
+    
+    // Страница авторизации (НОВАЯ)
+    loadAuthPage(container) {
+        if (this.authMode === 'login') {
+            this.loadLoginPage(container);
+        } else {
+            this.loadRegisterPage(container);
+        }
+    },
+    
+    // Страница входа
+    loadLoginPage(container) {
+        container.innerHTML = `
+            <section style="padding: 4rem 0; min-height: 70vh;">
+                <div class="container">
+                    <div style="max-width: 400px; margin: 0 auto;">
+                        <div style="background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+                            <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">Вход в аккаунт</h2>
+                            
+                            <div id="authMessage" style="display: none; padding: 0.8rem; border-radius: 6px; margin-bottom: 1rem; text-align: center;"></div>
+                            
+                            <form id="loginForm">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500;">Email</label>
+                                    <input type="email" id="loginEmail" required 
+                                           style="width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;"
+                                           placeholder="ваш@email.com">
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500;">Пароль</label>
+                                    <input type="password" id="loginPassword" required 
+                                           style="width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;"
+                                           placeholder="••••••••">
+                                </div>
+                                
+                                <button type="submit" id="loginSubmitBtn"
+                                        style="width: 100%; padding: 1rem; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-bottom: 1.5rem;">
+                                    Войти
+                                </button>
+                            </form>
+                            
+                            <div style="text-align: center; margin-bottom: 1.5rem;">
+                                <a href="#" id="switchToRegister" style="color: #667eea; text-decoration: none; font-weight: 500;">
+                                    Нет аккаунта? Зарегистрироваться
+                                </a>
+                            </div>
+                            
+                            <div style="text-align: center; color: #666; font-size: 0.9rem;">
+                                <p>Для демо можно использовать:</p>
+                                <p><strong>admin@example.com</strong> / <strong>password123</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        `;
+    },
+    
+    // Страница регистрации
+    loadRegisterPage(container) {
+        container.innerHTML = `
+            <section style="padding: 4rem 0; min-height: 70vh;">
+                <div class="container">
+                    <div style="max-width: 400px; margin: 0 auto;">
+                        <div style="background: white; border-radius: 12px; padding: 2.5rem; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+                            <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">Регистрация</h2>
+                            
+                            <div id="authMessage" style="display: none; padding: 0.8rem; border-radius: 6px; margin-bottom: 1rem; text-align: center;"></div>
+                            
+                            <form id="registerForm">
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500;">Имя</label>
+                                    <input type="text" id="registerName" required 
+                                           style="width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;"
+                                           placeholder="Ваше имя">
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500;">Email</label>
+                                    <input type="email" id="registerEmail" required 
+                                           style="width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;"
+                                           placeholder="ваш@email.com">
+                                </div>
+                                
+                                <div style="margin-bottom: 1.5rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500;">Пароль</label>
+                                    <input type="password" id="registerPassword" required 
+                                           style="width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;"
+                                           placeholder="Не менее 6 символов">
+                                </div>
+                                
+                                <div style="margin-bottom: 2rem;">
+                                    <label style="display: block; margin-bottom: 0.5rem; color: #666; font-weight: 500;">Подтвердите пароль</label>
+                                    <input type="password" id="registerConfirmPassword" required 
+                                           style="width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;"
+                                           placeholder="Повторите пароль">
+                                </div>
+                                
+                                <button type="submit" id="registerSubmitBtn"
+                                        style="width: 100%; padding: 1rem; background: #667eea; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-bottom: 1.5rem;">
+                                    Зарегистрироваться
+                                </button>
+                            </form>
+                            
+                            <div style="text-align: center;">
+                                <a href="#" id="switchToLogin" style="color: #667eea; text-decoration: none; font-weight: 500;">
+                                    Уже есть аккаунт? Войти
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        `;
+    },
+    
+    // Обработка входа
+    handleLogin() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const messageEl = document.getElementById('authMessage');
+        
+        const result = Auth.login(email, password);
+        
+        this.showAuthMessage(messageEl, result.message, result.success);
+        
+        if (result.success) {
+            setTimeout(() => {
+                window.location.hash = '#home';
+            }, 1500);
+        }
+    },
+    
+    // Обработка регистрации
+    handleRegister() {
+        const name = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        const messageEl = document.getElementById('authMessage');
+        
+        // Проверяем совпадение паролей
+        if (password !== confirmPassword) {
+            this.showAuthMessage(messageEl, 'Пароли не совпадают', false);
+            return;
+        }
+        
+        const result = Auth.register(email, password, name);
+        
+        this.showAuthMessage(messageEl, result.message, result.success);
+        
+        if (result.success) {
+            setTimeout(() => {
+                this.authMode = 'login';
+                this.loadPage();
+            }, 2000);
+        }
+    },
+    
+    // Показать сообщение авторизации
+    showAuthMessage(element, message, isSuccess) {
+        if (!element) return;
+        
+        element.textContent = message;
+        element.style.display = 'block';
+        element.style.background = isSuccess ? '#d4edda' : '#f8d7da';
+        element.style.color = isSuccess ? '#155724' : '#721c24';
+        element.style.border = isSuccess ? '1px solid #c3e6cb' : '1px solid #f5c6cb';
     },
     
     // Вспомогательные методы для категорий
@@ -774,25 +1128,6 @@ const App = {
         `;
     },
     
-    loadLoginPage(container) {
-        container.innerHTML = `
-            <section style="padding: 4rem 0;">
-                <div class="container">
-                    <h2 class="section-title">Вход в систему</h2>
-                    <div style="max-width: 400px; margin: 0 auto; padding: 2rem; background: white; border-radius: 10px;">
-                        <p>Для демо используйте:</p>
-                        <ul>
-                            <li><strong>Логин:</strong> admin</li>
-                            <li><strong>Пароль:</strong> admin123</li>
-                        </ul>
-                        <p style="color: #666; margin-top: 2rem;">Форма входа будет реализована позже</p>
-                        <a href="#home" class="cta-button" style="margin-top: 1rem;">На главную</a>
-                    </div>
-                </div>
-            </section>
-        `;
-    },
-    
     // Загрузка демо-данных
     loadDemoData() {
         this.demoProducts = [
@@ -876,9 +1211,10 @@ const App = {
     }
 };
 
-// Делаем App глобальным
+// Делаем App и Auth глобальными
 window.App = App;
 window.cart = cart;
+window.Auth = Auth;
 
 // Запуск приложения когда DOM готов
 if (document.readyState === 'loading') {
