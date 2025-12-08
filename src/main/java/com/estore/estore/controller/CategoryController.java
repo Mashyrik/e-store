@@ -5,6 +5,7 @@ import com.estore.estore.exception.BusinessException;
 import com.estore.estore.exception.ResourceNotFoundException;
 import com.estore.estore.model.Category;
 import com.estore.estore.service.CategoryService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement; // 👈 ИМПОРТ
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
+    // Публичные GET методы
     @GetMapping
     public List<Category> getAllCategories() {
         return categoryService.getAllCategories();
@@ -31,7 +33,9 @@ public class CategoryController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Защищенные методы (ADMIN)
     @PostMapping
+    @SecurityRequirement(name = "bearerAuth") // 👈 ЗАЩИТА
     public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
         try {
             Category category = categoryService.createCategory(categoryRequest);
@@ -42,6 +46,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth") // 👈 ЗАЩИТА
     public ResponseEntity<?> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest categoryRequest) {
         try {
             Category updatedCategory = categoryService.updateCategory(id, categoryRequest);
@@ -52,6 +57,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth") // 👈 ЗАЩИТА
     public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         try {
             categoryService.deleteCategory(id);

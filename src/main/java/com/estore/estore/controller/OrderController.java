@@ -4,6 +4,7 @@ import com.estore.estore.dto.request.OrderRequest;
 import com.estore.estore.dto.response.OrderResponse;
 import com.estore.estore.model.Order;
 import com.estore.estore.service.OrderService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement; // 👈 ИМПОРТ
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,48 +15,48 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
+@SecurityRequirement(name = "bearerAuth") // 👈 ЗАЩИТА ВСЕГО КЛАССА
 public class OrderController {
 
     @Autowired
     private OrderService orderService;
 
-    // Создать заказ из корзины
+    // Методы для аутентифицированных пользователей
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody OrderRequest orderRequest) {
         OrderResponse order = orderService.createOrderFromCart(orderRequest);
         return ResponseEntity.ok(order);
     }
 
-    // Получить заказы текущего пользователя
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getUserOrders() {
         List<OrderResponse> orders = orderService.getUserOrders();
         return ResponseEntity.ok(orders);
     }
 
-    // Получить конкретный заказ по ID
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
         OrderResponse order = orderService.getOrderById(id);
         return ResponseEntity.ok(order);
     }
 
-    // Получить все заказы (только для админа)
-    @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')") // 👈 ИЗМЕНИТЬ ЗДЕСЬ
-    public ResponseEntity<List<OrderResponse>> getAllOrders() {
-        List<OrderResponse> orders = orderService.getAllOrders();
-        return ResponseEntity.ok(orders);
-    }
     @PutMapping("/{id}/cancel")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<OrderResponse> cancelOrder(@PathVariable Long id) {
         OrderResponse order = orderService.cancelOrder(id);
         return ResponseEntity.ok(order);
     }
-    // Обновить статус заказа (только для админа)
+
+    // Методы только для ADMIN
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<OrderResponse>> getAllOrders() {
+        List<OrderResponse> orders = orderService.getAllOrders();
+        return ResponseEntity.ok(orders);
+    }
+
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')") // 👈 ИЗМЕНИТЬ ЗДЕСЬ
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long id,
             @RequestParam Order.OrderStatus status) {

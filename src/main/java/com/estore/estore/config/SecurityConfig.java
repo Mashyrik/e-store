@@ -45,6 +45,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/status").permitAll()
 
+
+                        .requestMatchers("/v3/api-docs/**").permitAll() // Схема API (JSON/YAML)
+                        .requestMatchers("/swagger-ui/**").permitAll()   // Сам интерфейс Swagger UI
+
                         // GET запросы для всех (публичный доступ)
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
