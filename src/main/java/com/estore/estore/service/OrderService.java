@@ -146,4 +146,40 @@ public class OrderService {
 
         return OrderResponse.fromOrder(updatedOrder);
     }
+
+    // 👇 НОВЫЙ МЕТОД: ОТМЕНА ЗАКАЗА
+    public OrderResponse cancelOrder(Long orderId) {
+        User user = getCurrentUser();
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found with id: " + orderId));
+
+        // Проверяем, что заказ принадлежит пользователю
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new BusinessException("You can only cancel your own orders");
+        }
+
+        // Проверяем, что заказ еще не доставлен или отгружен
+        if (order.getStatus() == Order.OrderStatus.SHIPPED ||
+                order.getStatus() == Order.OrderStatus.DELIVERED) {
+            throw new BusinessException("Cannot cancel order with status: " + order.getStatus());
+        }
+
+        // Проверяем, что заказ еще не отменен
+        if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+            throw new BusinessException("Order is already cancelled");
+        }
+
+        // Отменяем заказ
+        order.setStatus(Order.OrderStatus.CANCELLED);
+        Order cancelledOrder = orderRepository.save(order);
+
+        // Возвращаем товары на склад
+        for (OrderItem orderItem : cancelledOrder.getOrderItems()) {
+            Product product = orderItem.getProduct();
+            product.setStockQuantity(product.getStockQuantity() + orderItem.getQuantity());
+            productRepository.save(product);
+        }
+
+        return OrderResponse.fromOrder(cancelledOrder);
+    }
 }

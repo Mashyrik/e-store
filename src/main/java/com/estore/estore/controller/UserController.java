@@ -1,0 +1,29 @@
+package com.estore.estore.controller;
+
+import com.estore.estore.dto.response.UserProfileResponse;
+import com.estore.estore.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @Autowired
+    private UserService userService;
+
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<UserProfileResponse> getUserProfile() {
+        UserProfileResponse profile = userService.getCurrentUserProfile();
+        return ResponseEntity.ok(profile);
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getCurrentUser() {
+        return ResponseEntity.ok(userService.getCurrentUserInfo());
+    }
+}

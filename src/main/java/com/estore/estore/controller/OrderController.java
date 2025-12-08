@@ -47,7 +47,12 @@ public class OrderController {
         List<OrderResponse> orders = orderService.getAllOrders();
         return ResponseEntity.ok(orders);
     }
-
+    @PutMapping("/{id}/cancel")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable Long id) {
+        OrderResponse order = orderService.cancelOrder(id);
+        return ResponseEntity.ok(order);
+    }
     // Обновить статус заказа (только для админа)
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')") // 👈 ИЗМЕНИТЬ ЗДЕСЬ
