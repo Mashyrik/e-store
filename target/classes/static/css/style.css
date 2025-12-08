@@ -1,14 +1,13 @@
-/* static/css/style.css */
+/* css/style.css */
 
-/* Импорт всех компонентов */
+/* Импорт компонентов */
 @import url('components/header.css');
-@import url('components/footer.css');
 @import url('components/hero.css');
+@import url('components/features.css');
 @import url('components/categories.css');
 @import url('components/products.css');
-@import url('components/features.css');
 @import url('components/cart.css');
-@import url('components/auth.css');
+@import url('components/footer.css');
 
 /* Базовые стили */
 * {
@@ -67,16 +66,7 @@ body {
     box-shadow: none !important;
 }
 
-/* Загрузочные состояния */
-.loading {
-    text-align: center;
-    padding: 3rem;
-    color: #666;
-    font-size: 1.2rem;
-    grid-column: 1 / -1;
-}
-
-/* Анимации */
+/* Анимации для уведомлений */
 @keyframes slideIn {
     from {
         transform: translateX(100%);
@@ -99,17 +89,6 @@ body {
     }
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 /* Адаптивность */
 @media (max-width: 768px) {
     .section-title {
@@ -121,15 +100,52 @@ body {
     }
 }
 
-/* Стили для страницы авторизации */
-.auth-page .header {
-    display: block !important;
+/* Уведомления */
+.notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+    max-width: 300px;
 }
 
-.auth-page .features,
-.auth-page .categories,
-.auth-page .products-preview,
-.auth-page .cart-section,
-.auth-page .footer {
-    display: none !important;
+.notification-success {
+    background: #27ae60;
+    color: white;
+}
+
+.notification-warning {
+    background: #f39c12;
+    color: white;
+}
+
+.notification-info {
+    background: #3498db;
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
 }

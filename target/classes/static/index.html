@@ -1,101 +1,76 @@
-/* css/style.css */
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Магазин электроники</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Временные дебаг стили */
+        *:focus {
+            outline: 2px solid #667eea !important;
+        }
+        .debug-border {
+            border: 1px dashed #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="navbar container">
+            <div class="logo">
+                <span>🏪</span>
+                E-Store
+            </div>
+            <button class="menu-toggle" id="menuToggle">☰</button>
+            <div class="nav-links" id="navLinks">
+                <a href="#home">Главная</a>
+                <a href="#products">Товары</a>
+                <a href="#categories">Категории</a>
+                <a href="#cart">
+                    Корзина 
+                    <span class="cart-count" id="cartCount">0</span>
+                </a>
+                <a href="#login" id="loginLink">Войти</a>
+                <button id="logoutBtn" style="display:none;">Выйти</button>
+            </div>
+        </nav>
+        
+        <div class="search-container container">
+            <input type="text" id="searchInput" placeholder="Поиск товаров..." class="search-input">
+            <button id="searchBtn" class="search-btn">🔍</button>
+        </div>
+    </header>
 
-/* Импорт компонентов */
-@import url('components/header.css');
-@import url('components/hero.css');
-@import url('components/features.css');
-@import url('components/categories.css');
-@import url('components/products.css');
-@import url('components/cart.css');
-@import url('components/footer.css');
+    <!-- Main Content -->
+    <main id="mainContent">
+        <!-- Сюда будет вставляться содержимое страницы -->
+        <div id="pageContent"></div>
+    </main>
 
-/* Базовые стили */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>E-Store</h3>
+                    <p>Ваш надежный партнер в мире электроники</p>
+                </div>
+                <div class="footer-section">
+                    <h3>Контакты</h3>
+                    <p>📞 +7 (999) 123-45-67</p>
+                    <p>✉️ info@estore.com</p>
+                    <p>📍 г. Минск</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 E-Store</p>
+            </div>
+        </div>
+    </footer>
 
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
-    color: #333;
-    background-color: #f8f9fa;
-}
-
-/* Утилиты */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-}
-
-.section-title {
-    text-align: center;
-    font-size: 2.5rem;
-    margin-bottom: 3rem;
-    color: #2c3e50;
-}
-
-.cta-button {
-    display: inline-block;
-    background: #ff6b6b;
-    color: white;
-    padding: 1rem 2rem;
-    text-decoration: none;
-    border-radius: 50px;
-    font-weight: bold;
-    transition: transform 0.3s, box-shadow 0.3s;
-    border: none;
-    cursor: pointer;
-}
-
-.cta-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(255,107,107,0.4);
-}
-
-/* Стили для кнопок добавления в корзину */
-.add-to-cart-btn:disabled {
-    background: #ccc !important;
-    cursor: not-allowed;
-}
-
-.add-to-cart-btn:disabled:hover {
-    transform: none !important;
-    box-shadow: none !important;
-}
-
-/* Анимации для уведомлений */
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes slideOut {
-    from {
-        transform: translateX(0);
-        opacity: 1;
-    }
-    to {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    .section-title {
-        font-size: 2rem;
-    }
-    
-    .container {
-        padding: 0 1rem;
-    }
-}
+    <!-- JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>
