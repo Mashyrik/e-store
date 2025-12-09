@@ -764,10 +764,6 @@ const App = {
                                 </a>
                             </div>
                             
-                            <div style="text-align: center; color: #666; font-size: 0.9rem;">
-                                <p>Для демо можно использовать:</p>
-                                <p><strong>admin@example.com</strong> / <strong>password123</strong></p>
-                            </div>
                         </div>
                     </div>
                 </div>
