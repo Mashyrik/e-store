@@ -4,14 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Store - Магазин электроники</title>
+    
+    <!-- Основные стили -->
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Дополнительные стили -->
     <style>
         /* Временные дебаг стили */
-        *:focus {
-            outline: 2px solid #667eea !important;
+        .debug {
+            border: 1px solid red;
         }
-        .debug-border {
-            border: 1px dashed #ff6b6b;
+        
+        /* Анимации для корзины */
+        @keyframes cartBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        .cart-added {
+            animation: cartBounce 0.3s ease;
         }
     </style>
 </head>
@@ -20,33 +31,85 @@
     <header class="header">
         <nav class="navbar container">
             <div class="logo">
-                <span>🏪</span>
-                E-Store
+                <span class="logo-icon">🏪</span>
+                <span class="logo-text">E-Store</span>
             </div>
-            <button class="menu-toggle" id="menuToggle">☰</button>
+            
+            <button class="menu-toggle" id="menuToggle" aria-label="Открыть меню">
+                <span class="menu-icon">☰</span>
+            </button>
+            
             <div class="nav-links" id="navLinks">
-                <a href="#home">Главная</a>
-                <a href="#products">Товары</a>
-                <a href="#categories">Категории</a>
-                <a href="#cart">
-                    Корзина
+                <a href="#home" class="nav-link">Главная</a>
+                <a href="#products" class="nav-link">Товары</a>
+                <a href="#categories" class="nav-link">Категории</a>
+                <a href="cart.html" class="nav-link" id="cartLink">
+                    <span class="cart-text">Корзина</span>
                     <span class="cart-count" id="cartCount">0</span>
                 </a>
-                <a href="#login" id="loginLink">Войти</a>
-                <button id="logoutBtn" style="display:none;">Выйти</button>
+                <a href="login.html" class="nav-link" id="loginLink">Войти</a>
+                <button id="logoutBtn" class="nav-link logout-btn" style="display:none;">
+                    Выйти
+                </button>
             </div>
         </nav>
-
-        <div class="search-container container">
-            <input type="text" id="searchInput" placeholder="Поиск товаров..." class="search-input">
-            <button id="searchBtn" class="search-btn">🔍</button>
-        </div>
     </header>
 
     <!-- Main Content -->
-    <main id="mainContent">
-        <!-- Сюда будет вставляться содержимое страницы -->
-        <div id="pageContent"></div>
+    <main>
+        <!-- Hero Section -->
+        <section class="hero" id="home">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="hero-title">Добро пожаловать в E-Store</h1>
+                    <p class="hero-description">
+                        Лучший выбор электроники в Беларуси. Гарантия качества, 
+                        быстрая доставка, отличные цены в белорусских рублях.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#products" class="btn btn-primary cta-button">
+                            Смотреть товары
+                        </a>
+                        <a href="#categories" class="btn btn-outline">
+                            Посмотреть категории
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features">
+            <div class="container">
+                <h2 class="section-title">Почему выбирают нас</h2>
+                <div class="features-grid" id="features-container">
+                    <!-- Будет заполнено JavaScript -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Preview -->
+        <section class="categories" id="categories">
+            <div class="container">
+                <h2 class="section-title">Популярные категории</h2>
+                <div class="categories-grid" id="categories-container">
+                    <div class="loading-message">Загрузка категорий...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Preview -->
+        <section class="products-preview" id="products">
+            <div class="container">
+                <h2 class="section-title">Популярные товары</h2>
+                <div class="products-grid" id="products-container">
+                    <div class="loading-message">Загрузка товаров...</div>
+                </div>
+                <div class="view-more">
+                    <a href="products.html" class="btn btn-primary">Все товары</a>
+                </div>
+            </div>
+        </section>
     </main>
 
     <!-- Footer -->
@@ -54,23 +117,135 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h3>E-Store</h3>
-                    <p>Ваш надежный партнер в мире электроники</p>
+                    <h3 class="footer-title">E-Store</h3>
+                    <p class="footer-text">Ваш надежный партнер в мире электроники</p>
                 </div>
                 <div class="footer-section">
-                    <h3>Контакты</h3>
-                    <p>📞 +7 (999) 123-45-67</p>
-                    <p>✉️ info@estore.com</p>
-                    <p>📍 г. Минск</p>
+                    <h3 class="footer-title">Контакты</h3>
+                    <p class="footer-text">
+                        <strong>Телефон:</strong> +375 (29) 123-45-67
+                    </p>
+                    <p class="footer-text">
+                        <strong>Email:</strong> info@estore.by
+                    </p>
+                    <p class="footer-text">
+                        <strong>Адрес:</strong> г. Минск
+                    </p>
+                </div>
+                <div class="footer-section">
+                    <h3 class="footer-title">Время работы</h3>
+                    <p class="footer-text">Пн-Пт: 9:00 - 21:00</p>
+                    <p class="footer-text">Сб-Вс: 10:00 - 20:00</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 E-Store</p>
+                <p class="copyright">&copy; 2024 E-Store. Все права защищены.</p>
             </div>
         </div>
     </footer>
 
     <!-- JavaScript -->
-    <script src="js/app.js"></script>
+    <!-- Сначала утилиты и сервисы -->
+    <script src="js/services/api.service.js"></script>
+    <script src="js/services/auth.service.js"></script>
+    <script src="js/services/product.service.js"></script>
+    <script src="js/services/category.service.js"></script>
+    <script src="js/services/cart.service.js"></script>
+    
+    <!-- Затем основной app.js -->
+    <script src="js/utils/app.js"></script>
+    
+    <script>
+        // Инициализируем при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Страница загружена');
+            
+            // Заполняем блок преимуществ
+            const featuresContainer = document.getElementById('features-container');
+            if (featuresContainer) {
+                featuresContainer.innerHTML = `
+                    <div class="feature-card">
+                        <div class="feature-icon">🚚</div>
+                        <h3>Бесплатная доставка</h3>
+                        <p>Доставка по всей Беларуси при заказе от 100 руб.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Гарантия 2 года</h3>
+                        <p>Официальная гарантия на все товары от производителя</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💳</div>
+                        <h3>Удобная оплата</h3>
+                        <p>Наличные, карты, рассрочка, онлайн-платежи</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📞</div>
+                        <h3>Поддержка 24/7</h3>
+                        <p>Консультации и поддержка в любое время</p>
+                    </div>
+                `;
+            }
+            
+            // Проверяем авторизацию
+            const token = localStorage.getItem('token');
+            console.log('Токен в localStorage:', token ? 'есть' : 'нет');
+            
+            if (token) {
+                console.log('Пользователь авторизован');
+                // Обновляем UI
+                if (typeof AuthService !== 'undefined') {
+                    AuthService.updateAuthUI();
+                }
+            }
+            
+            // Обработчик для мобильного меню
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                    menuToggle.classList.toggle('active');
+                });
+                
+                // Закрываем меню при клике на ссылку
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.addEventListener('click', () => {
+                        navLinks.classList.remove('active');
+                        menuToggle.classList.remove('active');
+                    });
+                });
+            }
+            
+            // Обработчик для кнопки выхода
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (typeof AuthService !== 'undefined') {
+                        AuthService.logout();
+                    } else {
+                        // Простой выход
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = 'login.html';
+                    }
+                });
+            }
+            
+            // Проверяем загрузку CSS
+            console.log('Проверка стилей...');
+            const styleTest = document.createElement('div');
+            styleTest.style.cssText = 'position: fixed; top: 0; left: 0; width: 100px; height: 100px; background: red; z-index: 9999;';
+            styleTest.textContent = 'CSS тест';
+            document.body.appendChild(styleTest);
+            
+            setTimeout(() => {
+                document.body.removeChild(styleTest);
+                console.log('Тестовый элемент удален');
+            }, 1000);
+        });
+    </script>
 </body>
 </html>

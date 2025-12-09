@@ -1,505 +1,377 @@
-// =================================================================
-// 🚨 ВАЖНО: Убедитесь, что AuthService, ApiService, ProductService, CartService
-// подключены в index.html ДО этого файла!
-// =================================================================
+// static/js/utils/app.js - ОБНОВЛЕННАЯ ВЕРСИЯ
 
-// =================================================================
-// ГЛОБАЛЬНАЯ КОРЗИНА (Обновлена для работы с API)
-// =================================================================
-let cart = {
-    items: [],
-
-    // Инициализация (Асинхронная)
-    async init() {
-        if (Auth.isLoggedIn()) {
-            await this.loadFromServer();
-        } else {
-            this.loadLocal();
+class App {
+    static init() {
+        console.log('E-Store Frontend Initializing...');
+        
+        // Проверяем, на какой странице находимся
+        const path = window.location.pathname;
+        
+        if (path.includes('login.html') || path.endsWith('login')) {
+            this.initLoginPage();
+        } else if (path.includes('index.html') || path === '/') {
+            this.initMainPage();
         }
-        this.updateCount();
-    },
+        
+        // Инициализируем общие компоненты
+        this.initCommonComponents();
+    }
 
-    // Загрузка локальной версии
-    loadLocal() {
-        try {
-            const saved = localStorage.getItem('estore_cart');
-            this.items = saved ? JSON.parse(saved) : [];
-        } catch (error) {
-            console.error('Ошибка загрузки корзины:', error);
-            this.items = [];
+    static initCommonComponents() {
+        // Обновляем UI авторизации
+        if (typeof AuthService !== 'undefined') {
+            AuthService.updateAuthUI();
         }
-    },
-
-    // Загрузка с сервера (Требует CartService)
-    async loadFromServer() {
-        try {
-            const serverCart = await CartService.getCart();
-            // Предполагаем, что сервер возвращает объект { items: [...] }
-            this.items = serverCart.items || [];
-            this.saveLocal(); // Сохраняем актуальную серверную версию локально
-        } catch (error) {
-            // Если не удалось загрузить с сервера (например, 404/пустая), используем локальную
-            console.warn('Не удалось загрузить корзину с сервера. Используется локальная версия.', error);
-            this.loadLocal();
-        }
-    },
-
-    // Сохранение в localStorage
-    saveLocal() {
-        try {
-            localStorage.setItem('estore_cart', JSON.stringify(this.items));
-        } catch (error) {
-            console.error('Ошибка сохранения корзины:', error);
-        }
-    },
-
-    // Очистка локальной корзины (для выхода из системы)
-    clearLocal() {
-        this.items = [];
-        this.saveLocal();
-        this.updateCount();
-    },
-
-    // Добавление товара (Асинхронная)
-    async add(product, quantity = 1) {
-        if (Auth.isLoggedIn()) {
-            try {
-                // Отправка на сервер
-                await CartService.updateItem(product.id, quantity);
-                await this.loadFromServer(); // Перезагружаем корзину
-                this.showNotification(`"${product.name}" добавлен в корзину (API)!`);
-                this.updateCount();
-                return;
-            } catch (error) {
-                this.showNotification(`Ошибка API: ${error.message || 'не удалось добавить товар'}`, false);
-                return;
-            }
-        }
-
-        // Локальная логика для неавторизованных (ваш старый код)
-        const existing = this.items.find(item => item.id === product.id);
-        if (existing) {
-            existing.quantity += quantity;
-        } else {
-            this.items.push({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                model: product.model || '',
-                category: product.category || '',
-                quantity: quantity
+        
+        // Обработчик выхода
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof AuthService !== 'undefined') {
+                    AuthService.logout();
+                }
             });
         }
-        this.saveLocal();
-        this.updateCount();
-        this.showNotification(`"${product.name}" добавлен в корзину (Локально)!`);
-    },
-
-    // Удаление товара (Асинхронная)
-    async remove(productId) {
-        if (Auth.isLoggedIn()) {
-            try {
-                await CartService.removeItem(productId);
-                await this.loadFromServer();
-            } catch (error) {
-                this.showNotification(`Ошибка удаления API: ${error.message}`, false);
-            }
-        } else {
-            this.items = this.items.filter(item => item.id !== productId);
-            this.saveLocal();
+        
+        // Мобильное меню
+        const menuToggle = document.getElementById('menuToggle');
+        const navLinks = document.getElementById('navLinks');
+        
+        if (menuToggle && navLinks) {
+            menuToggle.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
         }
-        this.updateCount();
-    },
+        
+        // Корзина (пока локальная)
+        this.initCart();
+    }
 
-    // Обновление количества (Асинхронная)
-    async updateQuantity(productId, newQuantity) {
-        if (newQuantity < 1) {
-            await this.remove(productId);
+    static initLoginPage() {
+        console.log('Initializing login page...');
+        
+        // Проверяем, уже авторизован ли пользователь
+        const token = localStorage.getItem('token');
+        if (token) {
+            window.location.href = 'index.html';
             return;
         }
+        
+        // Инициализация форм будет в login.html
+    }
 
-        if (Auth.isLoggedIn()) {
-            try {
-                await CartService.updateItem(productId, newQuantity);
-                await this.loadFromServer();
-            } catch (error) {
-                this.showNotification(`Ошибка обновления API: ${error.message}`, false);
+    static initMainPage() {
+        console.log('Initializing main page...');
+        
+        // Загружаем данные с API
+        this.loadInitialData();
+    }
+
+    static async loadInitialData() {
+        try {
+            // Загружаем категории
+            if (typeof CategoryService !== 'undefined') {
+                const categories = await CategoryService.getAllCategories();
+                this.displayCategories(categories);
             }
-        } else {
-            const item = this.items.find(item => item.id === productId);
-            if (item) {
-                item.quantity = newQuantity;
-                this.saveLocal();
-                this.updateCount();
+            
+            // Загружаем товары
+            if (typeof ProductService !== 'undefined') {
+                const products = await ProductService.getAllProducts();
+                this.displayProducts(products);
             }
+            
+            // Обновляем счетчик корзины
+            this.updateCartCounter();
+            
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            this.showErrorMessage('Не удалось загрузить данные. Проверьте подключение к серверу.');
         }
-    },
+    }
 
-    // Очистка корзины (Асинхронная)
-    async clear() {
-        if (Auth.isLoggedIn()) {
-            try {
-                // 💡 Попробуем вызвать специальный эндпоинт очистки
-                await CartService.clearCart();
-                await this.loadFromServer();
-            } catch(error) {
-                // ⚠️ Если нет эндпоинта clear, удаляем все по одному
-                console.warn('ClearCart failed. Attempting to delete items one by one.');
-                try {
-                    for (const item of [...this.items]) {
-                        await CartService.removeItem(item.id);
+    static displayCategories(categories) {
+        const container = document.getElementById('categories-container');
+        if (!container || !categories || categories.length === 0) return;
+        
+        const html = categories.map(category => `
+            <div class="category-card">
+                <div class="category-image">
+                    ${this.getCategoryIcon(category.name)}
+                </div>
+                <div class="category-info">
+                    <h3>${category.name}</h3>
+                    <p>${category.description || 'Товары данной категории'}</p>
+                    <button class="btn btn-outline view-category-btn" 
+                            data-category-id="${category.id}">
+                        Смотреть товары
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = html;
+        
+        // Добавляем обработчики кнопок
+        document.querySelectorAll('.view-category-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const categoryId = btn.getAttribute('data-category-id');
+                this.showCategoryProducts(categoryId);
+            });
+        });
+    }
+
+    static displayProducts(products) {
+        const container = document.getElementById('products-container');
+        if (!container || !products || products.length === 0) {
+            if (container) {
+                container.innerHTML = '<p class="empty-message">Товары не найдены</p>';
+            }
+            return;
+        }
+        
+        const html = products.map(product => `
+            <div class="product-card">
+                <div class="product-image">
+                    ${product.imageUrl ? 
+                        `<img src="${product.imageUrl}" alt="${product.name}" 
+                              onerror="this.style.display='none'; this.parentElement.innerHTML='${this.getProductIcon(product.category?.name)}'">` : 
+                        `<div class="product-icon">${this.getProductIcon(product.category?.name)}</div>`
                     }
-                    await this.loadFromServer();
-                } catch (e) {
-                    this.showNotification(`Ошибка очистки корзины: ${e.message}`, false);
+                </div>
+                <div class="product-info">
+                    <h3>${product.name}</h3>
+                    <div class="product-price">${this.formatPrice(product.price)} руб.</div>
+                    <div class="product-model">Модель: ${product.model}</div>
+                    <div class="product-category">${product.category?.name || 'Без категории'}</div>
+                    <div class="product-stock ${product.stockQuantity > 0 ? 'in-stock' : 'out-of-stock'}">
+                        ${product.stockQuantity > 0 ? 
+                            `В наличии: ${product.stockQuantity} шт.` : 
+                            'Нет в наличии'
+                        }
+                    </div>
+                    <button class="btn btn-primary add-to-cart-btn" 
+                            data-product-id="${product.id}"
+                            data-product-name="${product.name}"
+                            data-product-price="${product.price}"
+                            ${product.stockQuantity === 0 ? 'disabled' : ''}>
+                        ${product.stockQuantity === 0 ? 'Нет в наличии' : 'В корзину'}
+                    </button>
+                </div>
+            </div>
+        `).join('');
+        
+        container.innerHTML = html;
+        
+        // Добавляем обработчики кнопок "В корзину"
+        this.setupAddToCartButtons();
+    }
+
+    static setupAddToCartButtons() {
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const productId = button.getAttribute('data-product-id');
+                const productName = button.getAttribute('data-product-name');
+                const productPrice = button.getAttribute('data-product-price');
+                
+                // Проверяем авторизацию для корзины
+                if (!AuthService.isAuthenticated()) {
+                    this.showAuthRequiredMessage();
+                    return;
                 }
-            }
+                
+                try {
+                    // Используем API для добавления в корзину
+                    if (typeof CartService !== 'undefined') {
+                        const result = await CartService.addToCart(productId, 1);
+                        if (result.success) {
+                            this.showNotification(`Товар "${productName}" добавлен в корзину`, 'success');
+                            this.updateCartCounter();
+                        }
+                    } else {
+                        // Локальная корзина для демо
+                        this.addToLocalCart({
+                            id: productId,
+                            name: productName,
+                            price: parseFloat(productPrice),
+                            quantity: 1
+                        });
+                        this.showNotification(`Товар "${productName}" добавлен в корзину`, 'success');
+                        this.updateCartCounter();
+                    }
+                } catch (error) {
+                    console.error('Error adding to cart:', error);
+                    this.showNotification('Ошибка при добавлении в корзину', 'error');
+                }
+            });
+        });
+    }
+
+    static initCart() {
+        // Проверяем существование корзины в localStorage
+        if (!localStorage.getItem('cart')) {
+            localStorage.setItem('cart', JSON.stringify([]));
+        }
+        this.updateCartCounter();
+    }
+
+    static addToLocalCart(product) {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const existingItem = cart.find(item => item.id === product.id);
+        
+        if (existingItem) {
+            existingItem.quantity += product.quantity || 1;
         } else {
-            this.clearLocal();
+            cart.push({
+                ...product,
+                quantity: product.quantity || 1
+            });
         }
-        this.updateCount();
-    },
+        
+        localStorage.setItem('cart', JSON.stringify(cart));
+        this.updateCartCounter();
+    }
 
-    // Получение общей суммы (Остается синхронным)
-    getTotal() {
-        return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    },
-
-    // Обновление счетчика (Остается синхронным)
-    updateCount() {
-        const total = this.items.reduce((sum, item) => sum + item.quantity, 0);
+    static updateCartCounter() {
         const counter = document.getElementById('cartCount');
+        if (!counter) return;
+        
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        
+        counter.textContent = totalItems;
+        counter.style.display = totalItems > 0 ? 'inline-block' : 'none';
+    }
 
-        if (counter) {
-            counter.textContent = total;
-            counter.style.display = total > 0 ? 'inline-block' : 'none';
+    static formatPrice(price) {
+        // Форматируем цену для белорусских рублей
+        if (!price) return '0.00';
+        return new Intl.NumberFormat('ru-BY', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(price);
+    }
+
+    static getCategoryIcon(categoryName) {
+        if (!categoryName) return '📦';
+        
+        const icons = {
+            'смартфон': '📱',
+            'ноутбук': '💻',
+            'телевизор': '📺',
+            'наушник': '🎧',
+            'колонка': '🔊',
+            'планшет': '📟',
+            'монитор': '🖥️',
+            'клавиатура': '⌨️',
+            'мышь': '🖱️',
+            'камера': '📷',
+            'часы': '⌚'
+        };
+        
+        const lowerName = categoryName.toLowerCase();
+        for (const [key, icon] of Object.entries(icons)) {
+            if (lowerName.includes(key)) {
+                return icon;
+            }
         }
-    },
+        return '📦';
+    }
 
-    // Показ уведомления (Остается синхронным)
-    showNotification(message, isSuccess = true) {
-        console.log('📦', message);
-        // ... (код для отображения уведомления)
+    static getProductIcon(categoryName) {
+        return this.getCategoryIcon(categoryName);
+    }
+
+    static showCategoryProducts(categoryId) {
+        console.log('Showing products for category:', categoryId);
+        // Реализуем позже
+        alert(`Показать товары категории ${categoryId} - в разработке`);
+    }
+
+    static showAuthRequiredMessage() {
+        if (confirm('Для добавления товаров в корзину необходимо войти в систему. Перейти на страницу входа?')) {
+            window.location.href = 'login.html';
+        }
+    }
+
+    static showNotification(message, type = 'info') {
+        // Создаем уведомление
         const notification = document.createElement('div');
+        notification.className = 'notification';
         notification.style.cssText = `
-            position: fixed; top: 20px; right: 20px; z-index: 1000;
-            background: ${isSuccess ? '#27ae60' : '#e74c3c'};
-            color: white; padding: 10px 20px; border-radius: 5px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: opacity 0.3s;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
         `;
         notification.textContent = message;
+        
         document.body.appendChild(notification);
-
+        
+        // Удаляем через 3 секунды
         setTimeout(() => {
-            notification.style.opacity = 0;
-            setTimeout(() => notification.remove(), 300);
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
         }, 3000);
     }
-};
 
-// =================================================================
-// СИСТЕМА АУТЕНТИФИКАЦИИ (Обновлена для работы с AuthService)
-// =================================================================
-const Auth = {
-    currentUser: null,
-
-    init() {
-        this.loadUser();
-        this.updateAuthUI();
-    },
-
-    // Загрузка пользователя (с проверкой токена)
-    loadUser() {
-        try {
-            const savedUser = localStorage.getItem('estore_user');
-            const token = localStorage.getItem('estore_token');
-            this.currentUser = savedUser ? JSON.parse(savedUser) : null;
-
-            // Если сессия неполная, сбрасываем ее
-            if ((this.currentUser && !token) || (!this.currentUser && token)) {
-                this.logout();
-                return null;
-            }
-            return this.currentUser;
-        } catch (error) {
-            console.error('Ошибка загрузки пользователя:', error);
-            this.currentUser = null;
-            return null;
-        }
-    },
-
-    // Сохранение пользователя и токена
-    saveSession(user, token) {
-        try {
-            localStorage.setItem('estore_token', token);
-            localStorage.setItem('estore_user', JSON.stringify(user));
-            this.currentUser = user;
-            this.updateAuthUI();
-            return true;
-        } catch (error) {
-            console.error('Ошибка сохранения сессии:', error);
-            return false;
-        }
-    },
-
-    // Выход (Очистка токена)
-    logout() {
-        this.currentUser = null;
-        localStorage.removeItem('estore_user');
-        localStorage.removeItem('estore_token');
-        cart.clearLocal();
-        this.updateAuthUI();
-        alert('Вы вышли из системы');
-        window.location.hash = '#home';
-    },
-
-    // Регистрация (Через AuthService)
-    async register(email, password, name) {
-        return await AuthService.register(email, password, name);
-    },
-
-    // Вход (Через AuthService)
-    async login(email, password) {
-        const result = await AuthService.login(email, password);
-
-        if (result.success) {
-            this.saveSession(result.user, result.token); // Сохраняем токен и данные
-            await cart.loadFromServer(); // Загружаем серверную корзину после входа
-        }
-        return result;
-    },
-
-    // Обновление UI
-    updateAuthUI() {
-        const loginLink = document.getElementById('loginLink');
-        const logoutBtn = document.getElementById('logoutBtn');
-        const userGreet = document.getElementById('userGreet');
-
-        if (loginLink && logoutBtn) {
-            if (this.currentUser) {
-                loginLink.style.display = 'none';
-                logoutBtn.style.display = 'block';
-                if (userGreet) {
-                    userGreet.textContent = `Привет, ${this.currentUser.name || this.currentUser.email.split('@')[0]}!`;
-                    userGreet.style.display = 'block';
-                }
-            } else {
-                loginLink.style.display = 'block';
-                logoutBtn.style.display = 'none';
-                if (userGreet) userGreet.style.display = 'none';
-            }
-        }
-    },
-
-    // Проверка авторизации
-    isLoggedIn() {
-        return this.currentUser !== null;
-    },
-
-    getUserName() {
-        return this.currentUser ? (this.currentUser.name || this.currentUser.email) : 'Гость';
+    static showErrorMessage(message) {
+        const container = document.getElementById('mainContent');
+        if (!container) return;
+        
+        const errorHtml = `
+            <div style="text-align: center; padding: 3rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3 style="color: #d32f2f; margin-bottom: 1rem;">Ошибка загрузки</h3>
+                <p style="color: #666; margin-bottom: 2rem;">${message}</p>
+                <button onclick="window.location.reload()" class="btn btn-primary">
+                    Обновить страницу
+                </button>
+            </div>
+        `;
+        
+        container.innerHTML = errorHtml;
     }
-};
 
-
-// =================================================================
-// ОСНОВНОЕ ПРИЛОЖЕНИЕ (App)
-// =================================================================
-const App = {
-    productsFromServer: [], // Хранилище для данных с API
-    currentPage: 1,
-    pageSize: 8,
-    filteredProducts: [],
-    currentCategory: null,
-    authMode: 'login',
-
-    // Мок-данные для аварийного режима
-    getMockProducts() {
+    // Тестовые данные для демо
+    static getMockProducts() {
         return [
-            { id: 1, name: 'iPhone 15 Pro', price: 99990, model: 'A2848', stockQuantity: 10, category: 'Смартфоны', icon: '📱' },
-            { id: 2, name: 'Samsung Galaxy S24', price: 89990, model: 'SM-S921B', stockQuantity: 8, category: 'Смартфоны', icon: '📱' },
-            { id: 3, name: 'MacBook Pro 16"', price: 180000, model: 'M3 Max', stockQuantity: 5, category: 'Ноутбуки', icon: '💻' },
-            { id: 4, name: 'Sony PlayStation 5', price: 55000, model: 'CFI-1200A', stockQuantity: 0, category: 'Консоли', icon: '🎮' },
-            { id: 5, name: 'Apple Watch Series 9', price: 42000, model: 'S9', stockQuantity: 15, category: 'Гаджеты', icon: '⌚' },
-            { id: 6, name: 'Logitech MX Master 3S', price: 8500, model: 'MX Master', stockQuantity: 25, category: 'Аксессуары', icon: '🖱️' },
-            { id: 7, name: 'Xiaomi 65" TV', price: 45000, model: 'MI-65', stockQuantity: 7, category: 'Телевизоры', icon: '📺' },
-            { id: 8, name: 'JBL Charge 5', price: 12000, model: 'Charge 5', stockQuantity: 20, category: 'Аксессуары', icon: '🔊' }
-        ];
-    },
-
-    // Асинхронная загрузка ВСЕХ данных (Требует ProductService)
-    async loadAllData() {
-        console.log('API: Попытка загрузки товаров...');
-        try {
-            this.productsFromServer = await ProductService.getAllProducts();
-            console.log(`API: Загружено ${this.productsFromServer.length} товаров.`);
-
-        } catch (error) {
-            console.error('❌ Ошибка загрузки данных с API. Используются мок-данные.', error);
-            this.productsFromServer = this.getMockProducts();
-        }
-        this.filteredProducts = [...this.productsFromServer];
-    },
-
-    // Инициализация
-    async init() {
-        console.log('🚀 E-Store запущен');
-
-        // 1. Загружаем данные с API (или мок-данные)
-        await this.loadAllData();
-
-        // 2. Инициализируем авторизацию
-        Auth.init();
-
-        // 3. Инициализируем корзину (await, чтобы убедиться, что серверная корзина загружена)
-        await cart.init();
-
-        this.setupMenu();
-        this.setupSearch();
-        this.setupRouting();
-
-        this.loadPage();
-    },
-
-    // ... (остальные методы setupMenu, setupSearch, handleSearch, setupRouting,
-    // loadPage, loadHomePage, loadProductsPage, loadCartPage, loadAuthPage
-    // остаются почти такими же, но используют this.productsFromServer и cart.add/remove/updateQuantity)
-
-    // Добавление товара в корзину (Асинхронная)
-    addProductToCart(productId) {
-        const product = this.productsFromServer.find(p => p.id === productId);
-
-        if (product) {
-            // Вызываем асинхронный метод
-            cart.add(product, 1).then(() => {
-                // Если мы на странице корзины, обновляем ее
-                if (window.location.hash === '#cart') {
-                    this.loadPage();
-                }
-            });
-        } else {
-            cart.showNotification('Товар не найден', false);
-        }
-    },
-
-    // Обработка входа (Асинхронная, использует Auth.login)
-    async handleLogin() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        const messageEl = document.getElementById('authMessage');
-
-        messageEl.style.display = 'none';
-        const result = await Auth.login(email, password); // 🔑 Используем Auth.login
-
-        this.showAuthMessage(messageEl, result.message, result.success);
-
-        if (result.success) {
-            setTimeout(() => {
-                window.location.hash = '#home';
-            }, 1500);
-        }
-    },
-
-    // Обработка регистрации (Асинхронная, использует Auth.register)
-    async handleRegister() {
-        const name = document.getElementById('registerName').value;
-        const email = document.getElementById('registerEmail').value;
-        const password = document.getElementById('registerPassword').value;
-        const confirmPassword = document.getElementById('registerConfirmPassword').value;
-        const messageEl = document.getElementById('authMessage');
-
-        if (password !== confirmPassword) {
-            this.showAuthMessage(messageEl, 'Пароли не совпадают', false);
-            return;
-        }
-
-        messageEl.style.display = 'none';
-        const result = await Auth.register(email, password, name); // 🔑 Используем Auth.register
-
-        this.showAuthMessage(messageEl, result.message, result.success);
-
-        if (result.success) {
-            setTimeout(() => {
-                this.authMode = 'login';
-                this.loadPage(); // Переходим на страницу входа
-            }, 2000);
-        }
-    },
-
-    // Применение фильтров (использует this.productsFromServer)
-    applyFilters() {
-        const searchInput = document.getElementById('productSearch');
-        const categoryFilter = document.getElementById('categoryFilter');
-        const sortFilter = document.getElementById('sortFilter');
-
-        let filtered = [...this.productsFromServer]; // 💡 Исходные данные с сервера
-
-        // ... (логика фильтрации и сортировки)
-        if (searchInput && searchInput.value.trim()) {
-            const query = searchInput.value.toLowerCase().trim();
-            filtered = filtered.filter(product => {
-                const name = product.name ? product.name.toLowerCase() : '';
-                const model = product.model ? product.model.toLowerCase() : '';
-                return name.includes(query) || model.includes(query);
-            });
-        }
-
-        if (categoryFilter && categoryFilter.value) {
-            filtered = filtered.filter(product => product.category === categoryFilter.value);
-        }
-
-        if (sortFilter) {
-            switch(sortFilter.value) {
-                case 'price-asc':
-                    filtered.sort((a, b) => a.price - b.price);
-                    break;
-                case 'price-desc':
-                    filtered.sort((a, b) => b.price - a.price);
-                    break;
-                default:
-                    filtered.sort((a, b) => a.name.localeCompare(b.name));
+            {
+                id: 1,
+                name: 'iPhone 15 Pro',
+                price: 4999.99,
+                model: 'A2848',
+                description: 'Новейший смартфон от Apple',
+                stockQuantity: 10,
+                category: { id: 1, name: 'Смартфоны' }
+            },
+            {
+                id: 2,
+                name: 'Samsung Galaxy S24',
+                price: 4499.99,
+                model: 'SM-S921B',
+                description: 'Флагманский смартфон от Samsung',
+                stockQuantity: 8,
+                category: { id: 1, name: 'Смартфоны' }
             }
-        }
+        ];
+    }
+}
 
-        this.filteredProducts = filtered;
-        this.currentPage = 1;
-        this.loadPaginatedProducts();
-    },
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    App.init();
+});
 
-    // ... (все остальные вспомогательные методы: loadHomePage, loadProductsPage, etc.)
-
-    // ⚠️ Остальные вспомогательные методы (loadHomePage, loadProductsPage, loadCartPage,
-    // loadAuthPage, setupRouting, getProductIcon и т.д.) не меняются по логике и
-    // должны быть скопированы из предыдущей версии файла app.js,
-    // убедившись, что они используют this.productsFromServer и this.filteredProducts.
-
-    // === Вспомогательные методы (для полноты) ===
-
-    setupMenu() { /* ... */ },
-    setupSearch() { /* ... */ },
-    handleSearch() { /* ... */ },
-    setupRouting() { /* ... */ },
-    loadPage() { /* ... */ },
-    loadHomePage(container) { /* ... */ },
-    loadHomeProducts() { /* ... */ },
-    loadProductsPage(container) { /* ... */ },
-    loadCategoriesPage(container) { /* ... */ },
-    loadAuthPage(container) { /* ... */ },
-    loadLoginPage(container) { /* ... */ },
-    loadRegisterPage(container) { /* ... */ },
-    showAuthMessage(element, message, isSuccess) { /* ... */ },
-    getCategoriesWithCount() { /* ... */ },
-    getProductIcon(category) { /* ... */ },
-    getProductWord(count) { /* ... */ },
-    filterByCategory(category) { /* ... */ },
-    clearCategoryFilter() { /* ... */ },
-    loadPaginatedProducts() { /* ... */ },
-    updatePagination(totalPages) { /* ... */ },
-    updateStats() { /* ... */ },
-    nextPage() { /* ... */ },
-    prevPage() { /* ... */ }
-    // ===========================================
-};
-
-// Запуск приложения
-App.init();
+window.App = App;
