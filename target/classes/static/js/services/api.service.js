@@ -1,86 +1,122 @@
-// js/services/api.service.js
+// static/js/services/auth.service.js - ОБНОВЛЕННАЯ ВЕРСИЯ
 
-class ApiService {
-    // Базовый URL для API
-    static API_BASE_URL = '/api';
+class AuthService {
+    /**
+     * Вход пользователя
+     */
+    static async login(username, password) {
+        try {
+            const response = await ApiService.post('/auth/login', {
+                username: username,
+                password: password
+            });
+
+            // Сохраняем токен и данные пользователя
+            if (response.token) {
+                localStorage.setItem('token', response.token);
+                localStorage.setItem('user', JSON.stringify({
+                    id: response.id,
+                    username: response.username,
+                    email: response.email,
+                    role: response.role
+                }));
+                
+                console.log('✅ Login successful:', response);
+                return { success: true, data: response };
+            }
+            
+            throw new Error('Не получен токен');
+            
+        } catch (error) {
+            console.error('❌ Login failed:', error);
+            return { 
+                success: false, 
+                message: error.message || 'Ошибка входа'
+            };
+        }
+    }
 
     /**
-     * Универсальный метод для выполнения API-запросов
-     * @param {string} endpoint - Конечная точка (например, /products)
-     * @param {string} method - Метод HTTP (GET, POST, DELETE и т.д.)
-     * @param {object|null} data - Тело запроса для POST/PUT
-     * @param {boolean} requiresAuth - Требуется ли токен авторизации
+     * Регистрация нового пользователя
      */
-    static async request(endpoint, method = 'GET', data = null, requiresAuth = false) {
-        const url = `${ApiService.API_BASE_URL}${endpoint}`;
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-
-        // 🛡️ ДОБАВЛЕНИЕ JWT-ТОКЕНА
-        if (requiresAuth) {
-            // Используем 'estore_token', как мы договорились
-            const token = localStorage.getItem('estore_token');
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            } else {
-                // Если требуется авторизация, но токена нет - выбрасываем ошибку
-                throw new Error('Требуется аутентификация. Токен отсутствует.');
-            }
-        }
-
-        const config = {
-            method: method,
-            headers: headers
-        };
-
-        if (data && method !== 'GET') {
-            config.body = JSON.stringify(data);
-        }
-
-        const response = await fetch(url, config);
-
-        // ⚠️ Обработка ошибок авторизации/доступа
-        if (response.status === 401 || response.status === 403) {
-            console.error('API Error: Unauthorized or Forbidden. Logging out.');
-            // Автоматический выход при недействительном токене
-            if (typeof Auth !== 'undefined' && Auth.logout) {
-                Auth.logout();
-            }
-            throw new Error('Сессия истекла или нет доступа');
-        }
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `Ошибка API: ${response.status}`);
-        }
-
+    static async register(userData) {
         try {
-            // Пытаемся распарсить JSON. Если ответ пустой (например, 204 No Content),
-            // возвращаем пустой объект.
-            return await response.json();
-        } catch (e) {
-            return {};
+            const response = await ApiService.post('/auth/register', {
+                username: userData.username,
+                email: userData.email,
+                password: userData.password
+            });
+
+            console.log('✅ Registration successful');
+            return { success: true, message: 'Регистрация успешна!' };
+            
+        } catch (error) {
+            console.error('❌ Registration failed:', error);
+            return { 
+                success: false, 
+                message: error.message || 'Ошибка регистрации'
+            };
         }
     }
 
-    // Вспомогательные методы
-    static get(endpoint, requiresAuth = false) {
-        return this.request(endpoint, 'GET', null, requiresAuth);
+    /**
+     * Выход
+     */
+    static logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = 'login.html';
     }
 
-    static post(endpoint, data, requiresAuth = false) {
-        return this.request(endpoint, 'POST', data, requiresAuth);
+    /**
+     * Проверка авторизации
+     */
+    static isAuthenticated() {
+        return !!localStorage.getItem('token');
     }
 
-    static delete(endpoint, requiresAuth = true) {
-        return this.request(endpoint, 'DELETE', null, requiresAuth);
+    /**
+     * Получить текущего пользователя
+     */
+    static getCurrentUser() {
+        const userStr = localStorage.getItem('user');
+        return userStr ? JSON.parse(userStr) : null;
     }
 
-    static put(endpoint, data, requiresAuth = true) {
-        return this.request(endpoint, 'PUT', data, requiresAuth);
+    /**
+     * Проверка роли администратора
+     */
+    static isAdmin() {
+        const user = this.getCurrentUser();
+        return user && (user.role === 'ROLE_ADMIN' || user.role === 'ADMIN');
+    }
+
+    /**
+     * Обновление UI в зависимости от авторизации
+     */
+    static updateAuthUI() {
+        const loginLink = document.getElementById('loginLink');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const user = this.getCurrentUser();
+
+        if (loginLink && logoutBtn) {
+            if (this.isAuthenticated()) {
+                loginLink.style.display = 'none';
+                logoutBtn.style.display = 'block';
+                logoutBtn.textContent = `Выйти (${user?.username || 'Пользователь'})`;
+            } else {
+                loginLink.style.display = 'block';
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        // Показываем админские элементы если нужно
+        if (this.isAdmin()) {
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = 'block';
+            });
+        }
     }
 }
 
-// Делаем доступным глобально
-window.ApiService = ApiService;
+window.AuthService = AuthService;
