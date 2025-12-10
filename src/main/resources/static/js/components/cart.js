@@ -1,70 +1,91 @@
-// js/components/cart.js - УПРОЩЕННАЯ ВЕРСИЯ
+// static/js/components/cart.js
+console.log('🛒 Loading cart component...');
+
 class SimpleCart {
     constructor() {
+        console.log('🛒 Creating new cart instance');
         this.items = this.load();
+        console.log(`📦 Loaded ${this.items.length} items from storage`);
     }
-    
+
     load() {
         try {
-            return JSON.parse(localStorage.getItem('simple_cart')) || [];
-        } catch {
+            const cartData = localStorage.getItem('cart');
+            const items = cartData ? JSON.parse(cartData) : [];
+            console.log(`📥 Cart loaded: ${items.length} items`);
+            return items;
+        } catch (error) {
+            console.error('❌ Error loading cart:', error);
             return [];
         }
     }
-    
+
     save() {
-        localStorage.setItem('simple_cart', JSON.stringify(this.items));
-        this.updateUI();
+        try {
+            localStorage.setItem('cart', JSON.stringify(this.items));
+            console.log(`💾 Cart saved: ${this.items.length} items`);
+
+            // Обновляем UI
+            if (typeof App !== 'undefined' && App.updateCartCount) {
+                App.updateCartCount();
+            }
+        } catch (error) {
+            console.error('❌ Error saving cart:', error);
+        }
     }
-    
+
     add(product) {
+        console.log(`➕ Adding product to cart: ${product.name}`);
+
         const existing = this.items.find(item => item.id === product.id);
-        
+
         if (existing) {
+            console.log(`📈 Increasing quantity for existing product: ${product.name}`);
             existing.quantity += product.quantity || 1;
         } else {
+            console.log(`🎁 Adding new product: ${product.name}`);
             this.items.push({
                 ...product,
                 quantity: product.quantity || 1
             });
         }
-        
+
         this.save();
-        this.showNotification(`"${product.name}" добавлен в корзину`);
+
+        // Показываем уведомление
+        if (typeof App !== 'undefined' && App.showNotification) {
+            App.showNotification(`"${product.name}" добавлен в корзину`, 'success');
+        } else {
+            console.log(`✅ "${product.name}" added to cart`);
+        }
     }
-    
+
     remove(id) {
+        console.log(`➖ Removing product ${id} from cart`);
         this.items = this.items.filter(item => item.id !== id);
         this.save();
     }
-    
+
     clear() {
+        console.log('🗑️ Clearing cart');
         this.items = [];
         this.save();
     }
-    
+
     getCount() {
-        return this.items.reduce((sum, item) => sum + item.quantity, 0);
+        const count = this.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        console.log(`📊 Cart count: ${count} items`);
+        return count;
     }
-    
+
     getTotal() {
-        return this.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    }
-    
-    updateUI() {
-        const counter = document.getElementById('cartCount');
-        if (counter) {
-            const count = this.getCount();
-            counter.textContent = count;
-            counter.style.display = count > 0 ? 'inline-block' : 'none';
-        }
-    }
-    
-    showNotification(message) {
-        // Можно заменить на красивый toast
-        console.log('📦 Корзина:', message);
+        const total = this.items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+        console.log(`💰 Cart total: ${total}`);
+        return total;
     }
 }
 
-// Экспорт
+// Создаем глобальную корзину
+window.cart = new SimpleCart();
 window.SimpleCart = SimpleCart;
+console.log('✅ Cart component loaded');

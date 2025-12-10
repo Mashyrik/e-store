@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Панель администратора</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+<!-- Хедер -->
+<header class="header">
+    <nav class="navbar container">
+        <div class="logo">
+            <span>👑</span>
+            E-Store Admin
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Сайт</a>
+            <a href="profile.html">Профиль</a>
+            <a href="admin.html" class="active">Админ-панель</a>
+            <button id="logoutBtn" class="btn btn-danger">Выйти</button>
+        </div>
+    </nav>
+</header>
+
+<!-- Основной контент -->
+<main class="admin-section">
+    <div class="container">
+        <div class="admin-header">
+            <h1>Панель администратора</h1>
+            <p>Управление магазином, пользователями и заказами</p>
+        </div>
+
+        <!-- Быстрые метрики -->
+        <div class="admin-stats">
+            <div class="stat-card admin-stat">
+                <div class="stat-icon">👥</div>
+                <div class="stat-info">
+                    <h3 id="totalUsers">0</h3>
+                    <p>Всего пользователей</p>
+                </div>
+            </div>
+            <div class="stat-card admin-stat">
+                <div class="stat-icon">📦</div>
+                <div class="stat-info">
+                    <h3 id="totalProducts">0</h3>
+                    <p>Товаров в магазине</p>
+                </div>
+            </div>
+            <div class="stat-card admin-stat">
+                <div class="stat-icon">💰</div>
+                <div class="stat-info">
+                    <h3 id="todayRevenue">0 ₽</h3>
+                    <p>Выручка за сегодня</p>
+                </div>
+            </div>
+            <div class="stat-card admin-stat">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-info">
+                    <h3 id="pendingOrders">0</h3>
+                    <p>Заказов в обработке</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Табы админ-панели -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="products">Товары</button>
+            <button class="admin-tab" data-tab="categories">Категории</button>
+            <button class="admin-tab" data-tab="orders">Заказы</button>
+            <button class="admin-tab" data-tab="users">Пользователи</button>
+            <button class="admin-tab" data-tab="analytics">Аналитика</button>
+        </div>
+
+        <!-- Контент табов -->
+        <div class="admin-content">
+            <!-- Управление товарами -->
+            <div id="productsTab" class="admin-tab-content active">
+                <div class="admin-toolbar">
+                    <h2>Управление товарами</h2>
+                    <button class="btn btn-primary" id="addProductBtn">+ Добавить товар</button>
+                </div>
+                <div id="productsTable" class="admin-table">
+                    <p>Загрузка товаров...</p>
+                </div>
+            </div>
+
+            <!-- Управление категориями -->
+            <div id="categoriesTab" class="admin-tab-content">
+                <div class="admin-toolbar">
+                    <h2>Управление категориями</h2>
+                    <button class="btn btn-primary" id="addCategoryBtn">+ Добавить категорию</button>
+                </div>
+                <div id="categoriesTable" class="admin-table">
+                    <p>Загрузка категорий...</p>
+                </div>
+            </div>
+
+            <!-- Управление заказами -->
+            <div id="ordersTabContent" class="admin-tab-content">
+                <div class="admin-toolbar">
+                    <h2>Все заказы</h2>
+                    <select id="orderStatusFilter" class="filter-select">
+                        <option value="all">Все статусы</option>
+                        <option value="PENDING">Ожидание</option>
+                        <option value="CONFIRMED">Подтвержден</option>
+                        <option value="SHIPPED">Отправлен</option>
+                        <option value="DELIVERED">Доставлен</option>
+                        <option value="CANCELLED">Отменен</option>
+                    </select>
+                </div>
+                <div id="ordersTable" class="admin-table">
+                    <p>Загрузка заказов...</p>
+                </div>
+            </div>
+
+            <!-- Управление пользователями -->
+            <div id="usersTab" class="admin-tab-content">
+                <div class="admin-toolbar">
+                    <h2>Пользователи</h2>
+                    <input type="text" id="userSearch" placeholder="Поиск пользователей..." class="search-input">
+                </div>
+                <div id="usersTable" class="admin-table">
+                    <p>Загрузка пользователей...</p>
+                </div>
+            </div>
+
+            <!-- Аналитика -->
+            <div id="analyticsTab" class="admin-tab-content">
+                <h2>Статистика магазина</h2>
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>📈 Продажи по месяцам</h3>
+                        <div id="salesChart" class="chart-placeholder">
+                            <p>График продаж</p>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>🔥 Популярные товары</h3>
+                        <div id="popularProducts">
+                            <p>Загрузка популярных товаров...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Футер -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>E-Store Admin</h3>
+                <p>Панель управления магазином</p>
+            </div>
+            <div class="footer-section">
+                <h3>Статус системы</h3>
+                <p id="systemStatus">🟢 Все системы работают</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- JavaScript -->
+<script src="static/js/components/admin.service.js"></script>
+<script src="static/js/components/admin.component.js"></script>
+<!-- В index.html, profile.html, admin.html, login.html -->
+<script src="static/js/utils/app.js"></script>
+</body>
+</html>

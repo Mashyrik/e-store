@@ -29,14 +29,14 @@
                 <a href="#products">Товары</a>
                 <a href="#categories">Категории</a>
                 <a href="#cart">
-                    Корзина 
+                    Корзина
                     <span class="cart-count" id="cartCount">0</span>
                 </a>
                 <a href="#login" id="loginLink">Войти</a>
                 <button id="logoutBtn" style="display:none;">Выйти</button>
             </div>
         </nav>
-        
+
         <div class="search-container container">
             <input type="text" id="searchInput" placeholder="Поиск товаров..." class="search-input">
             <button id="searchBtn" class="search-btn">🔍</button>
@@ -71,6 +71,49 @@
     </footer>
 
     <!-- JavaScript -->
-    <script src="js/app.js"></script>
+
+    <script src="static/js/utils/app.js"></script>
+    <script>
+        // Инициализация корзины на главной странице
+        document.addEventListener('DOMContentLoaded', function() {
+            // Инициализируем корзину
+            if (typeof SimpleCart !== 'undefined') {
+                window.cart = new SimpleCart();
+                cart.updateUI();
+            }
+
+            // Обновляем UI авторизации
+            App.updateAuthUI(!!localStorage.getItem('token'));
+
+            // Добавляем обработчики для кнопок корзины
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('add-to-cart-btn') ||
+                    e.target.closest('.add-to-cart-btn')) {
+
+                    const productId = e.target.dataset.productId ||
+                        e.target.closest('[data-product-id]')?.dataset.productId;
+
+                    if (productId && window.cart) {
+                        const product = {
+                            id: parseInt(productId),
+                            name: e.target.closest('.product-card')?.querySelector('h3')?.textContent || 'Товар',
+                            price: 10000, // Заглушка, нужно получать из данных
+                            quantity: 1
+                        };
+
+                        cart.add(product);
+                        App.showNotification('Товар добавлен в корзину', 'success');
+                    }
+                }
+            });
+        });
+    </script>
+    <script src="js/utils/storage.js"></script>
+    <script src="js/components/cart.js"></script>
+    <script src="js/components/products.js"></script>
+    <script src="js/components/categories.js"></script>
+    <script src="js/components/auth.service.js"></script>
+    <script src="js/utils/app.js"></script>
+
 </body>
 </html>

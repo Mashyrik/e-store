@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Профиль</title>
+    <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+<!-- Хедер -->
+<header class="header">
+    <nav class="navbar container">
+        <div class="logo">
+            <span>🏪</span>
+            E-Store
+        </div>
+        <div class="nav-links">
+            <a href="index.html">Главная</a>
+            <a href="#products">Товары</a>
+            <a href="profile.html" class="active">Профиль</a>
+            <a href="#orders">Заказы</a>
+            <button id="logoutBtn" class="btn btn-outline">Выйти</button>
+        </div>
+    </nav>
+</header>
+
+<!-- Основной контент -->
+<main class="profile-section">
+    <div class="container">
+        <div class="profile-header">
+            <h1>Личный кабинет</h1>
+            <p>Управление вашим аккаунтом и заказами</p>
+        </div>
+
+        <div class="profile-layout">
+            <!-- Боковая навигация -->
+            <aside class="profile-sidebar">
+                <div class="user-info">
+                    <div class="user-avatar">👤</div>
+                    <h3 id="userName">Загрузка...</h3>
+                    <p id="userEmail">...</p>
+                    <p id="userRole" class="role-badge">...</p>
+                </div>
+
+                <nav class="profile-nav">
+                    <a href="#overview" class="nav-link active" data-tab="overview">
+                        📊 Обзор
+                    </a>
+                    <a href="#orders" class="nav-link" data-tab="orders">
+                        📦 Мои заказы
+                    </a>
+                    <a href="#settings" class="nav-link" data-tab="settings">
+                        ⚙️ Настройки
+                    </a>
+
+                    <!-- Админские ссылки (видны только админу) -->
+                    <div id="adminLinks" style="display: none; margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
+                        <h4 style="color: #667eea; margin-bottom: 1rem;">Администрирование</h4>
+                        <a href="admin.html" class="nav-link admin-link" data-tab="admin">
+                            👑 Панель управления
+                        </a>
+                        <a href="#users" class="nav-link admin-link" data-tab="users">
+                            👥 Пользователи
+                        </a>
+                        <a href="#stats" class="nav-link admin-link" data-tab="stats">
+                            📈 Статистика
+                        </a>
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Основной контент -->
+            <div class="profile-content">
+                <!-- Вкладка "Обзор" -->
+                <div id="overviewTab" class="tab-content active">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-info">
+                                <h3 id="totalOrders">0</h3>
+                                <p>Всего заказов</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-info">
+                                <h3 id="totalSpent">0 ₽</h3>
+                                <p>Потрачено всего</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🛒</div>
+                            <div class="stat-info">
+                                <h3 id="cartItems">0</h3>
+                                <p>Товаров в корзине</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recent-orders">
+                        <h3>Последние заказы</h3>
+                        <div id="recentOrdersList" class="orders-list">
+                            <p>Загрузка заказов...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Мои заказы" -->
+                <div id="ordersTab" class="tab-content">
+                    <h2>История заказов</h2>
+                    <div id="ordersList" class="orders-list">
+                        <p>Загрузка истории заказов...</p>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Настройки" -->
+                <div id="settingsTab" class="tab-content">
+                    <h2>Настройки профиля</h2>
+                    <div class="settings-form">
+                        <div class="form-group">
+                            <label>Имя пользователя</label>
+                            <input type="text" id="usernameInput" placeholder="Ваше имя">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="emailInput" placeholder="Ваш email">
+                        </div>
+                        <button class="btn btn-primary" id="saveSettingsBtn">Сохранить изменения</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Футер -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>E-Store</h3>
+                <p>Ваш надежный партнер в мире электроники</p>
+            </div>
+            <div class="footer-section">
+                <h3>Контакты</h3>
+                <p>📞 +7 (999) 123-45-67</p>
+                <p>✉️ info@estore.com</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 E-Store. Все права защищены.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- JavaScript -->
+<!-- profile.html - ИСПРАВЛЕННАЯ ВЕРСИЯ -->
+<!-- JavaScript -->
+<script src="static/js/components/profile.service.js"></script>
+<script src="static/js/components/profile.component.js"></script>
+<script src="static/js/utils/app.js"></script>
+<!-- auth.component.js не нужен на странице профиля -->
+</body>
+</html>
