@@ -1,8 +1,10 @@
 package com.estore.estore.controller;
 
+import com.estore.estore.dto.request.UpdateProfileRequest;
 import com.estore.estore.dto.response.UserProfileResponse;
 import com.estore.estore.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement; // 👈 ИМПОРТ
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +23,13 @@ public class UserController {
     public ResponseEntity<UserProfileResponse> getUserProfile() {
         UserProfileResponse profile = userService.getCurrentUserProfile();
         return ResponseEntity.ok(profile);
+    }
+
+    @PutMapping("/profile")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<UserProfileResponse> updateUserProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        UserProfileResponse updatedProfile = userService.updateCurrentUserProfile(request);
+        return ResponseEntity.ok(updatedProfile);
     }
 
     @GetMapping("/me")

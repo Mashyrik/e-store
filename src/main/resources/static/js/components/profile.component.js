@@ -264,26 +264,48 @@ class ProfileComponent {
             return;
         }
 
+        // Валидация email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            this.showNotification('Введите корректный email адрес', 'error');
+            return;
+        }
+
+        // Валидация username
+        if (username.length < 3 || username.length > 50) {
+            this.showNotification('Имя пользователя должно быть от 3 до 50 символов', 'error');
+            return;
+        }
+
         try {
             const result = await ProfileService.updateProfile({ username, email });
 
             if (result.success) {
-                // Обновляем данные в localStorage
+                // Обновляем данные в localStorage с данными из ответа сервера
                 const user = JSON.parse(localStorage.getItem('user')) || {};
-                user.username = username;
-                user.email = email;
+                if (result.profile) {
+                    user.username = result.profile.username;
+                    user.email = result.profile.email;
+                } else {
+                    user.username = username;
+                    user.email = email;
+                }
                 localStorage.setItem('user', JSON.stringify(user));
 
                 // Обновляем UI
-                document.getElementById('userName').textContent = username;
-                document.getElementById('userEmail').textContent = email;
+                document.getElementById('userName').textContent = user.username;
+                document.getElementById('userEmail').textContent = user.email;
 
-                this.showNotification('Настройки сохранены', 'success');
+                // Перезагружаем профиль для обновления статистики
+                await this.loadProfile(true);
+
+                this.showNotification('Настройки успешно сохранены', 'success');
             } else {
-                this.showNotification(result.message, 'error');
+                this.showNotification(result.message || 'Ошибка сохранения настроек', 'error');
             }
         } catch (error) {
-            this.showNotification('Ошибка сохранения настроек', 'error');
+            console.error('Error saving settings:', error);
+            this.showNotification('Ошибка сохранения настроек: ' + error.message, 'error');
         }
     }
 

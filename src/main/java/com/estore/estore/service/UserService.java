@@ -1,6 +1,8 @@
 package com.estore.estore.service;
 
+import com.estore.estore.dto.request.UpdateProfileRequest;
 import com.estore.estore.dto.response.UserProfileResponse;
+import com.estore.estore.exception.DuplicateResourceException;
 import com.estore.estore.exception.ResourceNotFoundException;
 import com.estore.estore.model.Order;
 import com.estore.estore.model.Role;
@@ -181,6 +183,51 @@ public class UserService {
         userInfo.put("enabled", user.isEnabled());
 
         return userInfo;
+    }
+
+    /**
+     * Обновить профиль текущего пользователя
+     */
+    public UserProfileResponse updateCurrentUserProfile(UpdateProfileRequest request) {
+        User user = getCurrentUser();
+
+        // Проверяем, изменился ли username
+        if (!user.getUsername().equals(request.getUsername())) {
+            // Проверяем, не занят ли новый username другим пользователем
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new DuplicateResourceException("Username is already taken");
+            }
+            user.setUsername(request.getUsername());
+        }
+
+        // Проверяем, изменился ли email
+        if (!user.getEmail().equals(request.getEmail())) {
+            // Проверяем, не занят ли новый email другим пользователем
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new DuplicateResourceException("Email is already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
+
+        // Сохраняем изменения
+        user = userRepository.save(user);
+
+        // Получаем статистику заказов
+        List<Order> userOrders = orderRepository.findByUserId(user.getId());
+        int totalOrders = userOrders.size();
+        double totalSpent = userOrders.stream()
+                .mapToDouble(order -> order.getTotalAmount().doubleValue())
+                .sum();
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getRole().toString(),
+                user.getCreatedAt(),
+                totalOrders,
+                totalSpent
+        );
     }
 
     // ============ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ============

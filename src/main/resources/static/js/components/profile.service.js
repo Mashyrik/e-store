@@ -76,11 +76,41 @@ class ProfileService {
     static async updateProfile(data) {
         try {
             console.log('Updating profile:', data);
-            // Пока просто симулируем успешное обновление
-            return { success: true, message: 'Профиль обновлен' };
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                return { success: false, message: 'Необходима авторизация' };
+            }
+
+            const response = await fetch('http://localhost:8080/api/users/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    username: data.username,
+                    email: data.email
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || `Ошибка ${response.status}: ${response.statusText}`;
+                return { success: false, message: errorMessage };
+            }
+
+            const updatedProfile = await response.json();
+            console.log('Profile updated successfully:', updatedProfile);
+            
+            return { 
+                success: true, 
+                message: 'Профиль успешно обновлен',
+                profile: updatedProfile
+            };
         } catch (error) {
             console.error('Failed to update profile:', error);
-            return { success: false, message: 'Ошибка обновления профиля' };
+            return { success: false, message: 'Ошибка обновления профиля: ' + error.message };
         }
     }
 
