@@ -28,21 +28,26 @@ class ProfileComponent {
         window.location.href = 'login.html';
     }
 
-    static async loadProfile() {
+    static async loadProfile(forceRefresh = false) {
         try {
             // Показываем загрузку
             this.showLoading();
 
-            // Загружаем данные профиля
-            const profile = await ProfileService.getProfile();
+            // Загружаем заказы (обновляем всегда)
+            const orders = await ProfileService.getOrders(forceRefresh);
 
-            // Загружаем заказы
-            const orders = await ProfileService.getOrders();
+            // Загружаем данные профиля (используем актуальные заказы для статистики)
+            const profile = await ProfileService.getProfile(orders);
 
             // Обновляем UI
             this.updateProfileUI(profile);
-            this.updateOrdersUI(orders);
-            this.updateRecentOrdersUI(orders.slice(0, 3));
+            
+            // Обновляем заказы только для обычных пользователей (не админов)
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.role !== 'ROLE_ADMIN') {
+                this.updateOrdersUI(orders);
+                this.updateRecentOrdersUI(orders.slice(0, 3));
+            }
 
         } catch (error) {
             console.error('Error loading profile:', error);
@@ -56,11 +61,24 @@ class ProfileComponent {
         // Обновляем информацию пользователя
         document.getElementById('userName').textContent = profile.username;
         document.getElementById('userEmail').textContent = profile.email;
+        const loginEl = document.getElementById('userLogin');
+        if (loginEl) {
+            loginEl.textContent = profile.username;
+        }
+        const emailMeta = document.getElementById('userEmailMeta');
+        if (emailMeta) {
+            emailMeta.textContent = profile.email;
+        }
 
         // Обновляем роль
         const roleElement = document.getElementById('userRole');
         roleElement.textContent = profile.role === 'ROLE_ADMIN' ? 'Администратор' : 'Пользователь';
         roleElement.className = 'role-badge ' + (profile.role === 'ROLE_ADMIN' ? 'admin' : 'user');
+        const roleBadge = document.getElementById('userRoleBadge');
+        if (roleBadge) {
+            roleBadge.textContent = roleElement.textContent;
+            roleBadge.className = roleElement.className;
+        }
 
         // Обновляем статистику
         document.getElementById('totalOrders').textContent = profile.totalOrders;
@@ -105,24 +123,43 @@ class ProfileComponent {
     }
 
     static createOrderCard(order) {
+        const statusClass = order.status ? order.status.toLowerCase() : 'pending';
+        const itemsHtml = order.items && order.items.length > 0
+            ? order.items.map(item => `
+                <div class="order-item-row">
+                    <span class="order-item-name">${item.productName || 'Товар'}</span>
+                    <span class="order-item-quantity">× ${item.quantity || 1}</span>
+                    <span class="order-item-price">${ProfileService.formatPrice(item.subTotal || item.productPrice * (item.quantity || 1))}</span>
+                </div>
+            `).join('')
+            : '<p>Товары не найдены</p>';
+
         return `
             <div class="order-card">
                 <div class="order-header">
                     <div>
-                        <span class="order-id">Заказ #${order.id}</span>
+                        <span class="order-id">Заказ #${order.id || 'N/A'}</span>
                         <span class="order-date">${ProfileService.formatDate(order.createdAt)}</span>
                     </div>
-                    <span class="order-status status-${order.status.toLowerCase()}">
-                        ${ProfileService.getStatusText(order.status)}
+                    <span class="order-status status-${statusClass}">
+                        ${ProfileService.getStatusText(order.status || 'PENDING')}
                     </span>
                 </div>
                 <div class="order-items">
-                    ${order.items.map(item =>
-            `${item.productName} × ${item.quantity}`
-        ).join(', ')}
+                    ${itemsHtml}
                 </div>
+                ${order.shippingAddress ? `
+                    <div class="order-address">
+                        <strong>Адрес доставки:</strong> ${order.shippingAddress}
+                    </div>
+                ` : ''}
+                ${order.notes ? `
+                    <div class="order-notes">
+                        <strong>Комментарий:</strong> ${order.notes}
+                    </div>
+                ` : ''}
                 <div class="order-total">
-                    Итого: ${ProfileService.formatPrice(order.totalAmount)}
+                    Итого: ${ProfileService.formatPrice(order.totalAmount || 0)}
                 </div>
             </div>
         `;
@@ -132,8 +169,55 @@ class ProfileComponent {
         const user = JSON.parse(localStorage.getItem('user')) || {};
         const adminLinks = document.getElementById('adminLinks');
 
-        if (user.role === 'ROLE_ADMIN' && adminLinks) {
-            adminLinks.style.display = 'block';
+        if (user.role === 'ROLE_ADMIN') {
+            // Показываем админские ссылки
+            if (adminLinks) {
+                adminLinks.style.display = 'block';
+            }
+
+            // Скрываем вкладки "Обзор" и "Мои заказы" для админа
+            const overviewLink = document.querySelector('[data-tab="overview"]');
+            const ordersLink = document.querySelector('[data-tab="orders"]');
+            const statsLink = document.querySelector('[data-tab="stats"]');
+
+            if (overviewLink) {
+                overviewLink.style.display = 'none';
+            }
+            if (ordersLink) {
+                ordersLink.style.display = 'none';
+            }
+            if (statsLink) {
+                statsLink.style.display = 'none';
+            }
+
+            // Скрываем содержимое вкладок
+            const overviewTab = document.getElementById('overviewTab');
+            const ordersTab = document.getElementById('ordersTab');
+
+            if (overviewTab) {
+                overviewTab.style.display = 'none';
+            }
+            if (ordersTab) {
+                ordersTab.style.display = 'none';
+            }
+
+            // Переключаемся на вкладку "Настройки" по умолчанию для админа
+            const settingsLink = document.querySelector('[data-tab="settings"]');
+            if (settingsLink) {
+                settingsLink.classList.add('active');
+                const settingsTab = document.getElementById('settingsTab');
+                if (settingsTab) {
+                    settingsTab.classList.add('active');
+                }
+            }
+
+            // Убираем активность с других вкладок
+            if (overviewTab) {
+                overviewTab.classList.remove('active');
+            }
+            if (ordersTab) {
+                ordersTab.classList.remove('active');
+            }
         }
     }
 
@@ -271,6 +355,13 @@ class ProfileComponent {
 // Инициализируем когда DOM загружен
 document.addEventListener('DOMContentLoaded', () => {
     ProfileComponent.init();
+});
+
+// Перезагружаем заказы при фокусе на окне (если пользователь вернулся с другой страницы)
+window.addEventListener('focus', () => {
+    if (ProfileComponent && document.getElementById('ordersList')) {
+        ProfileComponent.loadProfile(true);
+    }
 });
 
 window.ProfileComponent = ProfileComponent;

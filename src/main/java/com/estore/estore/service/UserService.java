@@ -69,6 +69,16 @@ public class UserService {
         }
     }
 
+    /**
+     * Обновить статус пользователя (блокировка/разблокировка)
+     */
+    public User updateUserStatus(Long userId, boolean enabled) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        user.setEnabled(enabled);
+        return userRepository.save(user);
+    }
+
     // ============ ОСНОВНЫЕ МЕТОДЫ ДЛЯ АУТЕНТИФИКАЦИИ ============
 
     /**

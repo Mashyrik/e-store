@@ -157,6 +157,103 @@
     color: white;
 }
 
+.btn-warning {
+    background: #ff9800;
+    color: white;
+}
+
+.btn-success {
+    background: #4CAF50;
+    color: white;
+}
+
+/* Статусы пользователей */
+.status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-badge.status-active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.status-blocked {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Заблокированные пользователи */
+.user-blocked {
+    opacity: 0.7;
+    background: #f8f9fa;
+}
+
+.user-blocked td {
+    color: #6c757d;
+}
+
+/* Роли пользователей */
+.role-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.role-badge.admin {
+    background: #667eea;
+    color: white;
+}
+
+.role-badge.user {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.status-select {
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+}
+
+.status-select:hover {
+    border-color: #6366f1;
+}
+
+.status-select.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-select.status-confirmed {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-select.status-shipped {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-select.status-delivered {
+    background: #c3e6cb;
+    color: #155724;
+}
+
+.status-select.status-cancelled {
+    background: #f8d7da;
+    color: #721c24;
+}
+
 /* Карточки аналитики */
 .analytics-grid {
     display: grid;

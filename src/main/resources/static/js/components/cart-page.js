@@ -1,0 +1,172 @@
+// static/js/components/cart-page.js
+class CartPageComponent {
+    static async init() {
+        console.log('Initializing CartPageComponent');
+
+        if (!window.cart) {
+            window.cart = new SimpleCart();
+        }
+
+        this.renderCart();
+    }
+
+    static renderCart() {
+        const container = document.getElementById('cartContainer');
+        if (!container) return;
+
+        if (!window.cart || window.cart.items.length === 0) {
+            container.innerHTML = `
+                <div class="empty-cart" style="grid-column: 1/-1;">
+                    <div class="empty-cart-icon">🛒</div>
+                    <h2>Корзина пуста</h2>
+                    <p style="color: #6b7280; margin-bottom: 2rem;">Добавьте товары в корзину</p>
+                    <a href="products.html" class="btn btn-primary">Перейти к товарам</a>
+                </div>
+            `;
+            return;
+        }
+
+        const items = window.cart.items;
+        let itemsTotal = 0;
+
+        const itemsHtml = items.map(item => {
+            const itemTotal = item.price * (item.quantity || 1);
+            itemsTotal += itemTotal;
+
+            return `
+                <div class="cart-item" data-id="${item.id}">
+                    <div class="cart-item-image">
+                        <div class="product-icon">${this.getProductIcon(item.category)}</div>
+                    </div>
+                    <div class="cart-item-info">
+                        <h4>${item.name || 'Товар'}</h4>
+                        <div class="cart-item-model">
+                            ${item.model ? `Модель: ${item.model}` : ''}
+                            ${item.category ? ` • ${item.category}` : ''}
+                        </div>
+                    </div>
+                    <div class="cart-item-price">
+                        ${this.formatPrice(item.price)} BYN
+                    </div>
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="CartPageComponent.decreaseQuantity(${item.id})">-</button>
+                        <input type="number" class="quantity-input" value="${item.quantity || 1}" 
+                               min="1" onchange="CartPageComponent.updateQuantity(${item.id}, this.value)">
+                        <button class="quantity-btn" onclick="CartPageComponent.increaseQuantity(${item.id})">+</button>
+                    </div>
+                    <button class="remove-btn" onclick="CartPageComponent.removeItem(${item.id})">
+                        Удалить
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        const totalHtml = `
+            <div class="cart-summary">
+                <h3>Итого</h3>
+                <div class="summary-row">
+                    <span>Товары (${items.length}):</span>
+                    <span>${this.formatPrice(itemsTotal)} BYN</span>
+                </div>
+                <div class="summary-row">
+                    <span>Доставка:</span>
+                    <span>Бесплатно</span>
+                </div>
+                <div class="summary-row summary-total">
+                    <span>К оплате:</span>
+                    <span>${this.formatPrice(itemsTotal)} BYN</span>
+                </div>
+                <a href="checkout.html" class="btn btn-primary checkout-btn">
+                    Оформить заказ
+                </a>
+                <a href="products.html" class="continue-shopping" style="display: block; text-align: center; margin-top: 1rem;">
+                    ← Продолжить покупки
+                </a>
+            </div>
+        `;
+
+        container.innerHTML = `
+            <div class="cart-items">
+                <h2 style="margin-bottom: 1.5rem; color: #111827;">Товары в корзине</h2>
+                ${itemsHtml}
+            </div>
+            ${totalHtml}
+        `;
+    }
+
+    static increaseQuantity(productId) {
+        const item = window.cart.items.find(i => i.id === productId);
+        if (item) {
+            item.quantity = (item.quantity || 1) + 1;
+            window.cart.save();
+            this.renderCart();
+        }
+    }
+
+    static decreaseQuantity(productId) {
+        const item = window.cart.items.find(i => i.id === productId);
+        if (item) {
+            if (item.quantity > 1) {
+                item.quantity -= 1;
+                window.cart.save();
+                this.renderCart();
+            } else {
+                this.removeItem(productId);
+            }
+        }
+    }
+
+    static updateQuantity(productId, quantity) {
+        const qty = parseInt(quantity);
+        if (qty > 0) {
+            const item = window.cart.items.find(i => i.id === productId);
+            if (item) {
+                item.quantity = qty;
+                window.cart.save();
+                this.renderCart();
+            }
+        } else {
+            this.removeItem(productId);
+        }
+    }
+
+    static removeItem(productId) {
+        if (confirm('Удалить товар из корзины?')) {
+            window.cart.remove(productId);
+            this.renderCart();
+            
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification('Товар удален из корзины', 'info');
+            }
+        }
+    }
+
+    static getProductIcon(categoryName) {
+        if (!categoryName) return '🔌';
+        
+        const icons = {
+            'Смартфоны': '📱',
+            'Ноутбуки': '💻',
+            'Телевизоры': '📺',
+            'Аудиотехника': '🎧',
+            'Наушники': '🎧',
+            'Колонки': '🔊',
+            'Гаджеты': '⌚',
+            'default': '🔌'
+        };
+
+        for (const [key, icon] of Object.entries(icons)) {
+            if (categoryName.toLowerCase().includes(key.toLowerCase())) {
+                return icon;
+            }
+        }
+        return icons.default;
+    }
+
+    static formatPrice(price) {
+        return new Intl.NumberFormat('ru-RU').format(price);
+    }
+}
+
+window.CartPageComponent = CartPageComponent;
+

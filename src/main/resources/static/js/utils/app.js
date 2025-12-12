@@ -14,6 +14,9 @@ class App {
         // Проверяем авторизацию пользователя
         this.checkAuth();
 
+        // Скрываем кнопку корзины для админа
+        this.hideCartForAdmin();
+
         // Инициализируем компоненты для текущей страницы
         await this.initComponents();
 
@@ -35,6 +38,64 @@ class App {
 
         // Проверяем, нужно ли делать редирект
         this.redirectIfNeeded();
+    }
+
+    /**
+     * Скрывает кнопку корзины для администраторов
+     */
+    static hideCartForAdmin() {
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.role === 'ROLE_ADMIN') {
+                // Находим все ссылки на корзину
+                const cartLinks = document.querySelectorAll('a[href="cart.html"], a[href*="cart.html"]');
+                let hiddenCount = 0;
+                
+                cartLinks.forEach(link => {
+                    // Проверяем, что это ссылка в навигации (header/navbar)
+                    // Исключаем ссылки внутри основного контента страницы
+                    const isInNav = link.closest('.nav-links') || 
+                                   link.closest('nav') || 
+                                   link.closest('.navbar') || 
+                                   (link.closest('header') && !link.closest('main'));
+                    
+                    if (isInNav) {
+                        link.style.display = 'none';
+                        hiddenCount++;
+                    }
+                });
+
+                // Также скрываем счетчик корзины в навигации
+                const cartCount = document.getElementById('cartCount');
+                if (cartCount) {
+                    const isInNav = cartCount.closest('.nav-links') || 
+                                   cartCount.closest('nav') || 
+                                   cartCount.closest('.navbar') || 
+                                   (cartCount.closest('header') && !cartCount.closest('main'));
+                    if (isInNav) {
+                        cartCount.style.display = 'none';
+                    }
+                }
+
+                if (hiddenCount > 0) {
+                    console.log(`🛒 Скрыто ${hiddenCount} кнопок корзины для админа`);
+                }
+            } else {
+                // Если пользователь не админ, показываем кнопки корзины обратно
+                const cartLinks = document.querySelectorAll('a[href="cart.html"], a[href*="cart.html"]');
+                cartLinks.forEach(link => {
+                    const isInNav = link.closest('.nav-links') || 
+                                   link.closest('nav') || 
+                                   link.closest('.navbar') || 
+                                   (link.closest('header') && !link.closest('main'));
+                    if (isInNav && link.style.display === 'none') {
+                        link.style.display = '';
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка при скрытии корзины для админа:', error);
+        }
     }
 
     /**
@@ -60,6 +121,9 @@ class App {
                 const user = JSON.parse(localStorage.getItem('user')) || {};
                 link.textContent = user.username || 'Профиль';
             });
+
+            // Скрываем корзину для админа
+            this.hideCartForAdmin();
         } else {
             // Пользователь не авторизован - показываем кнопку входа
             if (loginLink) {
@@ -268,7 +332,7 @@ class App {
      * @returns {string} Отформатированная цена
      */
     static formatPrice(price) {
-        return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
+        return new Intl.NumberFormat('ru-RU').format(price) + ' BYN';
     }
 
     /**
@@ -369,6 +433,9 @@ class App {
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📄 DOM загружен, инициализация App...');
     App.init();
+    // Дополнительно скрываем корзину для админа после загрузки DOM
+    // (на случай если навигация загружается динамически)
+    App.hideCartForAdmin();
 });
 
 /**

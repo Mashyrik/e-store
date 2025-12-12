@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Store - Корзина</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components/cart.css">
+    <style>
+        .cart-hero {
+            background: linear-gradient(135deg, rgba(79,70,229,0.12), rgba(16,185,129,0.12));
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+        .cart-hero h1 {
+            font-size: 2.4rem;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        .cart-hero p {
+            color: #4b5563;
+        }
+        .cart-section {
+            padding: 2rem 0 4rem;
+        }
+    </style>
+</head>
+<body>
+<!-- Хедер -->
+<header class="header">
+    <nav class="navbar container">
+        <div class="logo">
+            E-Store
+        </div>
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <div class="nav-links" id="navLinks">
+            <a href="index.html">Главная</a>
+            <a href="products.html">Товары</a>
+            <a href="categories.html">Категории</a>
+            <a href="cart.html" class="active">
+                Корзина
+                <span class="cart-count" id="cartCount">0</span>
+            </a>
+            <a href="login.html" id="loginLink">Войти</a>
+            <a href="profile.html" id="profileLink">Профиль</a>
+        </div>
+    </nav>
+</header>
+
+<main>
+    <section class="cart-hero">
+        <div class="container">
+            <h1>Корзина</h1>
+            <p>Проверьте товары перед оформлением заказа</p>
+        </div>
+    </section>
+
+    <section class="cart-section">
+        <div class="container">
+            <div id="cartContainer" class="cart-container">
+                <p>Загрузка корзины...</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- Футер -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>E-Store</h3>
+                <p>Ваш надежный партнер в мире электроники</p>
+            </div>
+            <div class="footer-section">
+                <h3>Контакты</h3>
+                <p>📞 +375 (29) 123-45-67</p>
+                <p>✉️ info@estore.com</p>
+                <p>📍 г. Минск</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 E-Store</p>
+        </div>
+    </div>
+</footer>
+
+<!-- JavaScript -->
+<script src="js/utils/storage.js"></script>
+<script src="js/components/cart.js"></script>
+<script src="js/components/cart-page.js"></script>
+<script src="js/components/auth.service.js"></script>
+<script src="js/utils/app.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        App.updateAuthUI(!!localStorage.getItem('token'));
+        CartPageComponent.init();
+    });
+</script>
+</body>
+</html>
+

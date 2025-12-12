@@ -4,22 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Store - Профиль</title>
-    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components/profile.css">
 </head>
 <body>
 <!-- Хедер -->
 <header class="header">
     <nav class="navbar container">
         <div class="logo">
-            <span>🏪</span>
             E-Store
         </div>
         <div class="nav-links">
             <a href="index.html">Главная</a>
-            <a href="#products">Товары</a>
+            <a href="products.html">Товары</a>
+            <a href="categories.html">Категории</a>
+            <a href="cart.html" id="cartLink">Корзина</a>
             <a href="profile.html" class="active">Профиль</a>
-            <a href="#orders">Заказы</a>
-            <button id="logoutBtn" class="btn btn-outline">Выйти</button>
         </div>
     </nav>
 </header>
@@ -40,6 +40,7 @@
                     <h3 id="userName">Загрузка...</h3>
                     <p id="userEmail">...</p>
                     <p id="userRole" class="role-badge">...</p>
+                    <button id="logoutBtn" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">Выйти</button>
                 </div>
 
                 <nav class="profile-nav">
@@ -62,9 +63,6 @@
                         <a href="#users" class="nav-link admin-link" data-tab="users">
                             👥 Пользователи
                         </a>
-                        <a href="#stats" class="nav-link admin-link" data-tab="stats">
-                            📈 Статистика
-                        </a>
                     </div>
                 </nav>
             </aside>
@@ -84,7 +82,7 @@
                         <div class="stat-card">
                             <div class="stat-icon">💰</div>
                             <div class="stat-info">
-                                <h3 id="totalSpent">0 ₽</h3>
+                                <h3 id="totalSpent">3 250 BYN</h3>
                                 <p>Потрачено всего</p>
                             </div>
                         </div>
@@ -108,8 +106,24 @@
                 <!-- Вкладка "Мои заказы" -->
                 <div id="ordersTab" class="tab-content">
                     <h2>История заказов</h2>
+                    <div class="order-status-legend">
+                        <span class="legend-dot status-new"></span> Новые
+                        <span class="legend-dot status-processing"></span> В обработке
+                        <span class="legend-dot status-completed"></span> Доставлено
+                        <span class="legend-dot status-cancelled"></span> Отменено
+                    </div>
                     <div id="ordersList" class="orders-list">
-                        <p>Загрузка истории заказов...</p>
+                        <div class="order-card">
+                            <div class="order-header">
+                                <div>
+                                    <span class="order-id">Заказ #000</span>
+                                    <span class="order-date">--.--.----</span>
+                                </div>
+                                <span class="order-status status-new">Новый</span>
+                            </div>
+                            <div class="order-items">Здесь будет список товаров</div>
+                            <div class="order-total">Итого: 1 250 BYN</div>
+                        </div>
                     </div>
                 </div>
 
@@ -143,7 +157,7 @@
             </div>
             <div class="footer-section">
                 <h3>Контакты</h3>
-                <p>📞 +7 (999) 123-45-67</p>
+                <p>📞 +375 (29) 123-45-67</p>
                 <p>✉️ info@estore.com</p>
             </div>
         </div>
@@ -154,11 +168,9 @@
 </footer>
 
 <!-- JavaScript -->
-<!-- profile.html - ИСПРАВЛЕННАЯ ВЕРСИЯ -->
-<!-- JavaScript -->
-<script src="static/js/components/profile.service.js"></script>
-<script src="static/js/components/profile.component.js"></script>
-<script src="static/js/utils/app.js"></script>
+<script src="js/components/profile.service.js"></script>
+<script src="js/components/profile.component.js"></script>
+<script src="js/utils/app.js"></script>
 <!-- auth.component.js не нужен на странице профиля -->
 </body>
 </html>

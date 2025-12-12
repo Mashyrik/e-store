@@ -234,12 +234,68 @@
     color: #666;
     font-size: 0.9rem;
     margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.order-item-row:last-child {
+    border-bottom: none;
+}
+
+.order-item-name {
+    flex: 1;
+    color: #2c3e50;
+}
+
+.order-item-quantity {
+    margin: 0 1rem;
+    color: #666;
+}
+
+.order-item-price {
+    font-weight: 500;
+    color: #27ae60;
+}
+
+.order-address {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f0f0f0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.order-address strong {
+    color: #2c3e50;
+}
+
+.order-notes {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+    font-style: italic;
+}
+
+.order-notes strong {
+    color: #2c3e50;
+    font-style: normal;
 }
 
 .order-total {
     font-weight: bold;
     color: #27ae60;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 2px solid #eee;
+    font-size: 1.1rem;
 }
 
 /* Форма настроек */

@@ -1,5 +1,6 @@
 package com.estore.estore.controller;
 
+import com.estore.estore.dto.response.UserResponse;
 import com.estore.estore.model.User;
 import com.estore.estore.service.UserService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement; // 👈 ИМПОРТ
@@ -9,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -26,9 +28,12 @@ public class AdminController {
 
     @GetMapping("/users")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
         List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+        List<UserResponse> userResponses = users.stream()
+                .map(UserResponse::fromUser)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(userResponses);
     }
 
     @GetMapping("/stats")
@@ -59,5 +64,14 @@ public class AdminController {
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/users/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponse> updateUserStatus(
+            @PathVariable Long id,
+            @RequestParam boolean enabled) {
+        User updatedUser = userService.updateUserStatus(id, enabled);
+        return ResponseEntity.ok(UserResponse.fromUser(updatedUser));
     }
 }

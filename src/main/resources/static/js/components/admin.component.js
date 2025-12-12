@@ -8,14 +8,61 @@ class AdminComponent {
             return;
         }
 
+        // Инициализируем тестовые данные (если их еще нет)
+        this.initializeTestData();
+
         // Загружаем статистику
         await this.loadStats();
 
         // Настраиваем обработчики событий
         this.setupEventListeners();
 
-        // Загружаем первую вкладку
-        await this.loadTab('products');
+        // Загружаем первую вкладку (по умолчанию - товары, но можно изменить на orders)
+        const defaultTab = new URLSearchParams(window.location.search).get('tab') || 'products';
+        await this.loadTab(defaultTab);
+    }
+
+    static initializeTestData() {
+        // Инициализируем тестовые данные принудительно
+        try {
+            console.log('Initializing test data...');
+            
+            // Проверяем, нужно ли обновить данные
+            const existingUsers = localStorage.getItem('demoUsers');
+            const existingOrders = localStorage.getItem('demoOrders');
+            
+            let usersCount = 0;
+            let ordersCount = 0;
+            
+            try {
+                if (existingUsers) {
+                    usersCount = JSON.parse(existingUsers).length;
+                }
+                if (existingOrders) {
+                    ordersCount = JSON.parse(existingOrders).length;
+                }
+            } catch (e) {
+                console.warn('Error parsing existing data:', e);
+            }
+            
+            // Принудительно инициализируем пользователей если их меньше 12
+            if (usersCount < 12) {
+                const users = AdminService.getMockUsers(true);
+                console.log(`Initialized ${users.length} test users (was ${usersCount})`);
+            } else {
+                console.log(`Users already initialized: ${usersCount}`);
+            }
+            
+            // Принудительно инициализируем заказы если их меньше 12
+            if (ordersCount < 12) {
+                const orders = AdminService.getMockOrders(true);
+                console.log(`Initialized ${orders.length} test orders (was ${ordersCount})`);
+            } else {
+                console.log(`Orders already initialized: ${ordersCount}`);
+            }
+        } catch (e) {
+            console.warn('Error initializing test data:', e);
+        }
     }
 
     static isAdmin() {
@@ -76,7 +123,11 @@ class AdminComponent {
         }
     }
 
-    static async loadProducts() {
+    static async loadProducts(forceRefresh = false) {
+        // Очищаем кэш если требуется принудительное обновление
+        if (forceRefresh && ProductsComponent && ProductsComponent.productsCache) {
+            ProductsComponent.productsCache = [];
+        }
         const products = await AdminService.getProducts();
         this.renderProductsTable(products);
     }
@@ -86,14 +137,46 @@ class AdminComponent {
         this.renderCategoriesTable(categories);
     }
 
-    static async loadOrders() {
-        const orders = await AdminService.getOrders();
-        this.renderOrdersTable(orders);
+    static async loadOrders(statusFilter = 'all', forceRefresh = false) {
+        try {
+            console.log('Loading orders with filter:', statusFilter, 'forceRefresh:', forceRefresh);
+            const orders = await AdminService.getOrders(statusFilter, forceRefresh);
+            console.log('Loaded orders:', orders.length, orders);
+            this.renderOrdersTable(orders);
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            const container = document.getElementById('ordersTable');
+            if (container) {
+                container.innerHTML = `<p style="color: red;">Ошибка загрузки заказов: ${error.message}</p>`;
+            }
+        }
     }
 
     static async loadUsers() {
-        const users = await AdminService.getUsers();
+        console.log('Loading users...');
+        const users = await AdminService.getUsers(false);
+        console.log('Users loaded:', users.length, users);
         this.renderUsersTable(users);
+    }
+
+    static async refreshUsers() {
+        console.log('Refreshing users...');
+        this.showNotification('Обновление пользователей...', 'info');
+        // Принудительно обновляем данные
+        const users = await AdminService.getUsers(true);
+        console.log('Users refreshed:', users.length);
+        this.renderUsersTable(users);
+        this.showNotification(`Загружено ${users.length} пользователей`, 'success');
+    }
+
+    static async refreshOrders() {
+        console.log('Refreshing orders...');
+        const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+        this.showNotification('Обновление заказов...', 'info');
+        // Принудительно обновляем данные
+        await this.loadOrders(statusFilter, true);
+        const orders = await AdminService.getMockOrders(true);
+        this.showNotification(`Загружено ${orders.length} заказов`, 'success');
     }
 
     static async loadAnalytics() {
@@ -210,6 +293,7 @@ class AdminComponent {
                     <tr>
                         <th>ID</th>
                         <th>Пользователь</th>
+                        <th>Адрес доставки</th>
                         <th>Сумма</th>
                         <th>Статус</th>
                         <th>Дата</th>
@@ -220,22 +304,28 @@ class AdminComponent {
                 <tbody>
                     ${orders.map(order => `
                         <tr>
-                            <td>#${order.id}</td>
-                            <td>${order.user}</td>
-                            <td>${AdminService.formatPrice(order.total)}</td>
-                            <td>
-                                <span class="order-status status-${order.status.toLowerCase()}">
-                                    ${AdminService.getStatusText(order.status)}
-                                </span>
+                            <td><strong>#${order.id}</strong></td>
+                            <td>${order.username || 'Пользователь'}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${order.shippingAddress || 'Не указан'}">
+                                ${order.shippingAddress || 'Не указан'}
                             </td>
-                            <td>${AdminService.formatDate(order.createdAt)}</td>
-                            <td>${order.items}</td>
+                            <td><strong>${AdminService.formatPrice(order.totalAmount)}</strong></td>
+                            <td>
+                                <select class="status-select status-${(order.status || 'PENDING').toLowerCase()}" 
+                                        onchange="AdminComponent.changeOrderStatus(${order.id}, this.value)"
+                                        style="padding: 0.5rem; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 0.875rem; cursor: pointer;">
+                                    <option value="PENDING" ${order.status === 'PENDING' ? 'selected' : ''}>Ожидание</option>
+                                    <option value="CONFIRMED" ${order.status === 'CONFIRMED' ? 'selected' : ''}>Подтвержден</option>
+                                    <option value="SHIPPED" ${order.status === 'SHIPPED' ? 'selected' : ''}>Отправлен</option>
+                                    <option value="DELIVERED" ${order.status === 'DELIVERED' ? 'selected' : ''}>Доставлен</option>
+                                    <option value="CANCELLED" ${order.status === 'CANCELLED' ? 'selected' : ''}>Отменен</option>
+                                </select>
+                            </td>
+                            <td>${AdminService.formatDateTime(order.createdAt)}</td>
+                            <td>${order.items ? order.items.length : 0}</td>
                             <td class="action-buttons">
-                                <button class="btn btn-sm btn-view" onclick="AdminComponent.viewOrder(${order.id})">
+                                <button class="btn btn-sm btn-view" onclick="AdminComponent.viewOrder(${order.id})" title="Просмотр">
                                     👁️
-                                </button>
-                                <button class="btn btn-sm btn-edit" onclick="AdminComponent.editOrder(${order.id})">
-                                    ✏️
                                 </button>
                             </td>
                         </tr>
@@ -264,14 +354,22 @@ class AdminComponent {
                         <th>Имя</th>
                         <th>Email</th>
                         <th>Роль</th>
+                        <th>Статус</th>
                         <th>Дата регистрации</th>
                         <th>Заказов</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${users.map(user => `
-                        <tr>
+                    ${users.map(user => {
+                        // Определяем статус блокировки
+                        const isBlocked = user.blocked === true || user.enabled === false;
+                        const isEnabled = user.enabled === true && user.blocked !== true;
+                        const statusText = isBlocked ? 'Заблокирован' : 'Активен';
+                        const statusClass = isBlocked ? 'blocked' : 'active';
+                        
+                        return `
+                        <tr class="${isBlocked ? 'user-blocked' : ''}">
                             <td>${user.id}</td>
                             <td><strong>${user.username}</strong></td>
                             <td>${user.email}</td>
@@ -280,18 +378,33 @@ class AdminComponent {
                                     ${user.role === 'ROLE_ADMIN' ? 'Админ' : 'Пользователь'}
                                 </span>
                             </td>
+                            <td>
+                                <span class="status-badge status-${statusClass}">
+                                    ${statusText}
+                                </span>
+                            </td>
                             <td>${AdminService.formatDate(user.createdAt)}</td>
-                            <td>${user.totalOrders}</td>
+                            <td>${user.totalOrders || 0}</td>
                             <td class="action-buttons">
-                                <button class="btn btn-sm btn-edit" onclick="AdminComponent.editUser(${user.id})">
+                                ${user.role !== 'ROLE_ADMIN' ? `
+                                    <button class="btn btn-sm ${isBlocked ? 'btn-success' : 'btn-warning'}" 
+                                            onclick="AdminComponent.toggleUserStatus(${user.id}, ${!isBlocked})"
+                                            title="${isBlocked ? 'Разблокировать' : 'Заблокировать'}">
+                                        ${isBlocked ? '🔓' : '🔒'}
+                                    </button>
+                                ` : ''}
+                                <button class="btn btn-sm btn-edit" onclick="AdminComponent.editUser(${user.id})" title="Редактировать">
                                     ✏️
                                 </button>
-                                <button class="btn btn-sm btn-delete" onclick="AdminComponent.deleteUser(${user.id})">
-                                    🗑️
-                                </button>
+                                ${user.role !== 'ROLE_ADMIN' ? `
+                                    <button class="btn btn-sm btn-delete" onclick="AdminComponent.deleteUser(${user.id})" title="Удалить">
+                                        🗑️
+                                    </button>
+                                ` : ''}
                             </td>
                         </tr>
-                    `).join('')}
+                    `;
+                    }).join('')}
                 </tbody>
             </table>
         `;
@@ -367,13 +480,31 @@ class AdminComponent {
         // Фильтр заказов
         const orderFilter = document.getElementById('orderStatusFilter');
         if (orderFilter) {
-            orderFilter.addEventListener('change', (e) => this.filterOrders(e.target.value));
+            orderFilter.addEventListener('change', async (e) => {
+                await this.filterOrders(e.target.value);
+            });
         }
 
         // Поиск пользователей
         const userSearch = document.getElementById('userSearch');
         if (userSearch) {
             userSearch.addEventListener('input', (e) => this.searchUsers(e.target.value));
+        }
+
+        // Кнопка обновления пользователей
+        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+        if (refreshUsersBtn) {
+            refreshUsersBtn.addEventListener('click', async () => {
+                await this.refreshUsers();
+            });
+        }
+
+        // Кнопка обновления заказов
+        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
+        if (refreshOrdersBtn) {
+            refreshOrdersBtn.addEventListener('click', async () => {
+                await this.refreshOrders();
+            });
         }
 
         // Кнопка выхода
@@ -400,16 +531,39 @@ class AdminComponent {
 
     // ============ ФИЛЬТРАЦИЯ И ПОИСК ============
 
-    static filterOrders(status) {
+    static async filterOrders(status) {
         console.log('Filtering orders by status:', status);
-        // В реальном приложении здесь будет запрос к API с фильтром
-        this.loadOrders();
+        try {
+            await this.loadOrders(status);
+        } catch (error) {
+            console.error('Error filtering orders:', error);
+            this.showNotification('Ошибка фильтрации заказов', 'error');
+        }
     }
 
-    static searchUsers(query) {
+    static async searchUsers(query) {
         console.log('Searching users:', query);
-        // В реальном приложении здесь будет запрос к API с поиском
-        this.loadUsers();
+        try {
+            const users = await AdminService.getUsers();
+            
+            if (!query || query.trim() === '') {
+                this.renderUsersTable(users);
+                return;
+            }
+
+            // Фильтруем пользователей по запросу
+            const searchTerm = query.toLowerCase().trim();
+            const filteredUsers = users.filter(user => 
+                user.username.toLowerCase().includes(searchTerm) ||
+                user.email.toLowerCase().includes(searchTerm) ||
+                (user.role && user.role.toLowerCase().includes(searchTerm))
+            );
+
+            this.renderUsersTable(filteredUsers);
+        } catch (error) {
+            console.error('Error searching users:', error);
+            this.showNotification('Ошибка поиска пользователей', 'error');
+        }
     }
 
     // ============ ОПЕРАЦИИ С ТОВАРАМИ ============
@@ -619,6 +773,26 @@ class AdminComponent {
 
     // ============ ОПЕРАЦИИ С ПОЛЬЗОВАТЕЛЯМИ ============
 
+    static async toggleUserStatus(userId, block) {
+        const action = block ? 'заблокировать' : 'разблокировать';
+        if (!confirm(`Вы уверены, что хотите ${action} этого пользователя?`)) return;
+
+        try {
+            const result = await AdminService.toggleUserStatus(userId, !block);
+
+            if (result.success) {
+                this.showNotification(result.message, 'success');
+                // Перезагружаем список пользователей
+                await this.loadTab('users');
+            } else {
+                this.showNotification(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error toggling user status:', error);
+            this.showNotification(`Ошибка ${block ? 'блокировки' : 'разблокировки'} пользователя: ${error.message}`, 'error');
+        }
+    }
+
     static editUser(userId) {
         console.log('Editing user:', userId);
         this.showNotification(`Редактирование пользователя #${userId}`, 'info');
@@ -643,14 +817,35 @@ class AdminComponent {
 
     // ============ ОПЕРАЦИИ С ЗАКАЗАМИ ============
 
-    static viewOrder(orderId) {
-        console.log('Viewing order:', orderId);
-        this.showNotification(`Просмотр заказа #${orderId}`, 'info');
+    static async changeOrderStatus(orderId, newStatus) {
+        try {
+            // Получаем текущий фильтр статуса
+            const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+            
+            const result = await AdminService.updateOrderStatus(orderId, newStatus);
+
+            if (result.success) {
+                this.showNotification(`Статус заказа #${orderId} обновлен на "${AdminService.getStatusText(newStatus)}"`, 'success');
+                // Перезагружаем заказы для обновления таблицы с сохранением фильтра
+                await this.loadOrders(statusFilter);
+            } else {
+                this.showNotification(result.message || 'Ошибка обновления статуса', 'error');
+                // Перезагружаем заказы чтобы вернуть предыдущий статус
+                await this.loadOrders(statusFilter);
+            }
+        } catch (error) {
+            console.error('Error changing order status:', error);
+            this.showNotification(`Ошибка обновления статуса заказа: ${error.message}`, 'error');
+            // Перезагружаем заказы
+            const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+            await this.loadOrders(statusFilter);
+        }
     }
 
-    static editOrder(orderId) {
-        console.log('Editing order:', orderId);
-        this.showNotification(`Редактирование заказа #${orderId}`, 'info');
+    static viewOrder(orderId) {
+        // Можно открыть модальное окно с деталями заказа
+        console.log('Viewing order:', orderId);
+        this.showNotification(`Просмотр заказа #${orderId}`, 'info');
     }
 
     // ============ УТИЛИТЫ ============

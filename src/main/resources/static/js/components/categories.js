@@ -14,11 +14,9 @@ class CategoriesComponent {
 
     static async loadCategories() {
         return [
-            { id: 1, name: 'Смартфоны', description: 'Мобильные телефоны' },
-            { id: 2, name: 'Ноутбуки', description: 'Портативные компьютеры' },
-            { id: 3, name: 'Телевизоры', description: 'Телевизоры и мониторы' },
-            { id: 4, name: 'Аудиотехника', description: 'Наушники и колонки' },
-            { id: 5, name: 'Гаджеты', description: 'Умные устройства' }
+            { id: 1, name: 'Смартфоны', description: 'Мобильные телефоны и смартфоны от ведущих производителей' },
+            { id: 2, name: 'Ноутбуки', description: 'Портативные компьютеры для работы и развлечений' },
+            { id: 4, name: 'Аудиотехника', description: 'Наушники, колонки и другая аудиотехника' }
         ];
     }
 
@@ -27,16 +25,15 @@ class CategoriesComponent {
         if (!container) return;
 
         const html = categories.map(category => `
-            <div class="category-card" data-id="${category.id}">
+            <div class="category-card" onclick="CategoriesComponent.viewCategory('${category.name}')">
                 <div class="category-image">
                     ${this.getCategoryIcon(category.name)}
                 </div>
                 <div class="category-info">
                     <h3>${category.name}</h3>
                     <p>${category.description || 'Современные устройства'}</p>
-                    <button class="btn btn-outline view-category-btn" 
-                            onclick="CategoriesComponent.viewCategory(${category.id})">
-                        Смотреть товары
+                    <button class="btn btn-primary view-category-btn">
+                        Смотреть товары →
                     </button>
                 </div>
             </div>
@@ -45,10 +42,9 @@ class CategoriesComponent {
         container.innerHTML = html;
     }
 
-    static viewCategory(categoryId) {
-        console.log('Viewing category:', categoryId);
-        // Здесь можно реализовать загрузку товаров категории
-        this.showNotification(`Загрузка товаров категории #${categoryId}`, 'info');
+    static viewCategory(categoryName) {
+        // Переходим на страницу товаров с параметром категории
+        window.location.href = `products.html?category=${encodeURIComponent(categoryName)}`;
     }
 
     static getCategoryIcon(categoryName) {

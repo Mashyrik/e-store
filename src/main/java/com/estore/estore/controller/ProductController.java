@@ -69,12 +69,12 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @SecurityRequirement(name = "bearerAuth") // 👈 ЗАЩИТА
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+    public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest productRequest) {
         try {
-            Product updatedProduct = productService.updateProduct(id, productDetails);
+            Product updatedProduct = productService.updateProduct(id, productRequest);
             return ResponseEntity.ok(updatedProduct);
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            throw new BusinessException(e.getMessage());
         }
     }
 
