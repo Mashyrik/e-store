@@ -149,6 +149,11 @@ class ProductsComponent {
         // Добавляем стили для ссылок названий товаров
         const style = document.createElement('style');
         style.textContent = `
+            .product-info h3 a {
+                display: block;
+                transition: color 0.2s ease;
+                pointer-events: auto;
+            }
             .product-info h3 a:hover {
                 color: #6366f1 !important;
                 text-decoration: underline !important;
@@ -267,6 +272,7 @@ class ProductsComponent {
     static getProductIcon(categoryName) {
         const icons = {
             'Смартфоны': '📱',
+            'Планшеты': '📱',
             'Ноутбуки': '💻',
             'Телевизоры': '📺',
             'Аудиотехника': '🎧',
