@@ -42,16 +42,27 @@ class AuthService {
             });
             
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Ошибка регистрации');
+                let errorMessage = 'Ошибка регистрации';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || errorData.error || errorMessage;
+                } catch (e) {
+                    // Если не удалось распарсить JSON, используем статус ответа
+                    errorMessage = `Ошибка сервера: ${response.status} ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
             
             const data = await response.json();
-            console.log('Registration successful via API');
+            console.log('Registration successful via API', data);
             return data;
             
         } catch (error) {
             console.error('Registration failed:', error);
+            // Если это ошибка сети (failed to fetch), даем более понятное сообщение
+            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+                throw new Error('Не удалось подключиться к серверу. Убедитесь, что сервер запущен на http://localhost:8080');
+            }
             throw error;
         }
     }
