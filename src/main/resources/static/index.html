@@ -75,7 +75,6 @@
                             <span class="chip">Доставка за 1 день</span>
                             <span class="chip">Хит</span>
                         </div>
-                        <button class="btn btn-primary add-to-cart-btn" data-product-id="101">В корзину</button>
                     </div>
                 </div>
                 <div class="product-card">
@@ -87,7 +86,6 @@
                         <div class="product-meta">
                             <span class="chip">Рассрочка 0%</span>
                         </div>
-                        <button class="btn btn-primary add-to-cart-btn" data-product-id="102">В корзину</button>
                     </div>
                 </div>
                 <div class="product-card">
@@ -99,7 +97,6 @@
                         <div class="product-meta">
                             <span class="chip">Бестселлер</span>
                         </div>
-                        <button class="btn btn-primary add-to-cart-btn" data-product-id="103">В корзину</button>
                     </div>
                 </div>
                 <div class="product-card">
@@ -111,13 +108,12 @@
                         <div class="product-meta">
                             <span class="chip">Хит продаж</span>
                         </div>
-                        <button class="btn btn-primary add-to-cart-btn" data-product-id="104">В корзину</button>
                     </div>
                 </div>
             </div>
 
             <div style="text-align: center; margin: 2rem 0;">
-                <a class="btn btn-primary" href="#products">Перейти в каталог</a>
+                <a class="btn btn-primary" href="products.html">Перейти в каталог</a>
             </div>
         </section>
     </main>
@@ -161,28 +157,6 @@
 
             // Обновляем UI авторизации
             App.updateAuthUI(!!localStorage.getItem('token'));
-
-            // Добавляем обработчики для кнопок корзины
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('add-to-cart-btn') ||
-                    e.target.closest('.add-to-cart-btn')) {
-
-                    const productId = e.target.dataset.productId ||
-                        e.target.closest('[data-product-id]')?.dataset.productId;
-
-                    if (productId && window.cart) {
-                        const product = {
-                            id: parseInt(productId),
-                            name: e.target.closest('.product-card')?.querySelector('h3')?.textContent || 'Товар',
-                            price: 10000, // Заглушка, нужно получать из данных
-                            quantity: 1
-                        };
-
-                        cart.add(product);
-                        App.showNotification('Товар добавлен в корзину', 'success');
-                    }
-                }
-            });
         });
     </script>
 
