@@ -34,7 +34,13 @@ class ProfileComponent {
             this.showLoading();
 
             // Загружаем заказы (обновляем всегда)
-            const orders = await ProfileService.getOrders(forceRefresh);
+            let orders = [];
+            try {
+                orders = await ProfileService.getOrders(forceRefresh);
+            } catch (orderError) {
+                console.warn('Failed to load orders, continuing with empty list:', orderError);
+                // Продолжаем работу даже если заказы не загрузились
+            }
 
             // Загружаем данные профиля (используем актуальные заказы для статистики)
             const profile = await ProfileService.getProfile(orders);
@@ -51,7 +57,7 @@ class ProfileComponent {
 
         } catch (error) {
             console.error('Error loading profile:', error);
-            this.showError('Не удалось загрузить профиль');
+            this.showError('Не удалось загрузить профиль: ' + (error.message || 'Неизвестная ошибка'));
         } finally {
             this.hideLoading();
         }
@@ -295,9 +301,22 @@ class ProfileComponent {
                 // Обновляем UI
                 document.getElementById('userName').textContent = user.username;
                 document.getElementById('userEmail').textContent = user.email;
+                
+                // Обновляем поля формы
+                document.getElementById('usernameInput').value = user.username;
+                document.getElementById('emailInput').value = user.email;
 
-                // Перезагружаем профиль для обновления статистики
-                await this.loadProfile(true);
+                // Обновляем статистику из ответа сервера, если она есть
+                if (result.profile && typeof result.profile.totalOrders !== 'undefined') {
+                    const totalOrdersEl = document.getElementById('totalOrders');
+                    if (totalOrdersEl) {
+                        totalOrdersEl.textContent = result.profile.totalOrders || 0;
+                    }
+                    const totalSpentEl = document.getElementById('totalSpent');
+                    if (totalSpentEl && result.profile.totalSpent !== undefined) {
+                        totalSpentEl.textContent = ProfileService.formatPrice(result.profile.totalSpent);
+                    }
+                }
 
                 this.showNotification('Настройки успешно сохранены', 'success');
             } else {
