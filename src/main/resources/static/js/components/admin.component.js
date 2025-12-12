@@ -8,8 +8,6 @@ class AdminComponent {
             return;
         }
 
-        // Инициализируем тестовые данные (если их еще нет)
-        this.initializeTestData();
 
         // Загружаем статистику
         await this.loadStats();
@@ -22,48 +20,6 @@ class AdminComponent {
         await this.loadTab(defaultTab);
     }
 
-    static initializeTestData() {
-        // Инициализируем тестовые данные принудительно
-        try {
-            console.log('Initializing test data...');
-            
-            // Проверяем, нужно ли обновить данные
-            const existingUsers = localStorage.getItem('demoUsers');
-            const existingOrders = localStorage.getItem('demoOrders');
-            
-            let usersCount = 0;
-            let ordersCount = 0;
-            
-            try {
-                if (existingUsers) {
-                    usersCount = JSON.parse(existingUsers).length;
-                }
-                if (existingOrders) {
-                    ordersCount = JSON.parse(existingOrders).length;
-                }
-            } catch (e) {
-                console.warn('Error parsing existing data:', e);
-            }
-            
-            // Принудительно инициализируем пользователей если их меньше 12
-            if (usersCount < 12) {
-                const users = AdminService.getMockUsers(true);
-                console.log(`Initialized ${users.length} test users (was ${usersCount})`);
-            } else {
-                console.log(`Users already initialized: ${usersCount}`);
-            }
-            
-            // Принудительно инициализируем заказы если их меньше 12
-            if (ordersCount < 12) {
-                const orders = AdminService.getMockOrders(true);
-                console.log(`Initialized ${orders.length} test orders (was ${ordersCount})`);
-            } else {
-                console.log(`Orders already initialized: ${ordersCount}`);
-            }
-        } catch (e) {
-            console.warn('Error initializing test data:', e);
-        }
-    }
 
     static isAdmin() {
         const user = JSON.parse(localStorage.getItem('user')) || {};
@@ -124,17 +80,33 @@ class AdminComponent {
     }
 
     static async loadProducts(forceRefresh = false) {
-        // Очищаем кэш если требуется принудительное обновление
-        if (forceRefresh && ProductsComponent && ProductsComponent.productsCache) {
-            ProductsComponent.productsCache = [];
+        try {
+            // Очищаем кэш если требуется принудительное обновление
+            if (forceRefresh && ProductsComponent && ProductsComponent.productsCache) {
+                ProductsComponent.productsCache = [];
+            }
+            const products = await AdminService.getProducts();
+            this.renderProductsTable(products);
+        } catch (error) {
+            console.error('Error loading products:', error);
+            const container = document.getElementById('productsTable');
+            if (container) {
+                container.innerHTML = `<p style="color: red;">Ошибка загрузки товаров: ${error.message}</p>`;
+            }
         }
-        const products = await AdminService.getProducts();
-        this.renderProductsTable(products);
     }
 
     static async loadCategories() {
-        const categories = await AdminService.getCategories();
-        this.renderCategoriesTable(categories);
+        try {
+            const categories = await AdminService.getCategories();
+            this.renderCategoriesTable(categories);
+        } catch (error) {
+            console.error('Error loading categories:', error);
+            const container = document.getElementById('categoriesTable');
+            if (container) {
+                container.innerHTML = `<p style="color: red;">Ошибка загрузки категорий: ${error.message}</p>`;
+            }
+        }
     }
 
     static async loadOrders(statusFilter = 'all', forceRefresh = false) {
@@ -153,20 +125,33 @@ class AdminComponent {
     }
 
     static async loadUsers() {
-        console.log('Loading users...');
-        const users = await AdminService.getUsers(false);
-        console.log('Users loaded:', users.length, users);
-        this.renderUsersTable(users);
+        try {
+            console.log('Loading users...');
+            const users = await AdminService.getUsers(false);
+            console.log('Users loaded:', users.length, users);
+            this.renderUsersTable(users);
+        } catch (error) {
+            console.error('Error loading users:', error);
+            const container = document.getElementById('usersTable');
+            if (container) {
+                container.innerHTML = `<p style="color: red;">Ошибка загрузки пользователей: ${error.message}</p>`;
+            }
+        }
     }
 
     static async refreshUsers() {
-        console.log('Refreshing users...');
-        this.showNotification('Обновление пользователей...', 'info');
-        // Принудительно обновляем данные
-        const users = await AdminService.getUsers(true);
-        console.log('Users refreshed:', users.length);
-        this.renderUsersTable(users);
-        this.showNotification(`Загружено ${users.length} пользователей`, 'success');
+        try {
+            console.log('Refreshing users...');
+            this.showNotification('Обновление пользователей...', 'info');
+            // Принудительно обновляем данные
+            const users = await AdminService.getUsers(true);
+            console.log('Users refreshed:', users.length);
+            this.renderUsersTable(users);
+            this.showNotification(`Загружено ${users.length} пользователей`, 'success');
+        } catch (error) {
+            console.error('Error refreshing users:', error);
+            this.showNotification('Ошибка обновления пользователей: ' + error.message, 'error');
+        }
     }
 
     static async refreshOrders() {
@@ -174,14 +159,22 @@ class AdminComponent {
         const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
         this.showNotification('Обновление заказов...', 'info');
         // Принудительно обновляем данные
-        await this.loadOrders(statusFilter, true);
-        const orders = await AdminService.getMockOrders(true);
-        this.showNotification(`Загружено ${orders.length} заказов`, 'success');
+        try {
+            await this.loadOrders(statusFilter, true);
+            this.showNotification('Заказы обновлены', 'success');
+        } catch (error) {
+            this.showNotification('Ошибка обновления заказов: ' + error.message, 'error');
+        }
     }
 
     static async loadAnalytics() {
-        const stats = await AdminService.getStats();
-        this.renderAnalytics(stats);
+        try {
+            const stats = await AdminService.getStats();
+            this.renderAnalytics(stats);
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            this.showNotification('Не удалось загрузить аналитику: ' + error.message, 'error');
+        }
     }
 
     // ============ РЕНДЕРИНГ ТАБЛИЦ ============

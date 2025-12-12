@@ -335,49 +335,6 @@ class App {
         return new Intl.NumberFormat('ru-RU').format(price) + ' BYN';
     }
 
-    /**
-     * Возвращает тестовые товары для демо
-     */
-    static getMockProducts() {
-        return [
-            {
-                id: 1,
-                name: 'iPhone 15 Pro',
-                price: 99990,
-                category: 'Смартфоны',
-                stock: 15,
-                model: 'A2848',
-                description: 'Новейший смартфон от Apple'
-            },
-            {
-                id: 2,
-                name: 'Samsung Galaxy S24',
-                price: 89990,
-                category: 'Смартфоны',
-                stock: 22,
-                model: 'SM-S921B',
-                description: 'Флагманский смартфон от Samsung'
-            },
-            {
-                id: 3,
-                name: 'MacBook Air M2',
-                price: 129990,
-                category: 'Ноутбуки',
-                stock: 8,
-                model: 'M2',
-                description: 'Ультратонкий ноутбук от Apple'
-            },
-            {
-                id: 4,
-                name: 'Sony WH-1000XM5',
-                price: 29990,
-                category: 'Аудиотехника',
-                stock: 45,
-                model: 'WH-1000XM5',
-                description: 'Беспроводные наушники с шумоподавлением'
-            }
-        ];
-    }
 
     /**
      * Показывает/скрывает спиннер загрузки

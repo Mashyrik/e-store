@@ -505,29 +505,16 @@ class ProductDetailComponent {
 
     static async loadCategories() {
         try {
-            // Загружаем категории через API или мок-данные
-            let categories = [];
+            // Загружаем категории через API
+            const response = await fetch('http://localhost:8080/api/categories');
             
-            try {
-                const response = await fetch('http://localhost:8080/api/categories');
-                if (response.ok) {
-                    categories = await response.json();
-                    // Сохраняем в кэш
-                    this.categoriesCache = categories;
-                } else {
-                    throw new Error('API недоступен');
-                }
-            } catch (e) {
-                // Используем мок-данные
-                categories = [
-                    { id: 1, name: 'Смартфоны' },
-                    { id: 2, name: 'Ноутбуки' },
-                    { id: 3, name: 'Телевизоры' },
-                    { id: 4, name: 'Аудиотехника' },
-                    { id: 5, name: 'Гаджеты' }
-                ];
-                this.categoriesCache = categories;
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
+            
+            const categories = await response.json();
+            // Сохраняем в кэш
+            this.categoriesCache = categories;
 
             // Заполняем селект категорий (сохраняем ID в data-атрибуте)
             const categorySelect = document.getElementById('editProductCategoryDetail');
@@ -684,9 +671,8 @@ class ProductDetailComponent {
                     throw new Error(errorData.message || `Ошибка ${response.status}`);
                 }
             } catch (apiError) {
-                // Если API недоступен, используем демо-режим
-                console.warn('API недоступен, используем демо-режим:', apiError);
-                return this.createProductDemo(productData);
+                console.error('API недоступен:', apiError);
+                throw apiError;
             }
         } catch (error) {
             console.error('Failed to create product:', error);
@@ -745,9 +731,8 @@ class ProductDetailComponent {
                     throw new Error(errorData.message || `Ошибка ${response.status}`);
                 }
             } catch (apiError) {
-                // Если API недоступен, используем демо-режим
-                console.warn('API недоступен, используем демо-режим:', apiError);
-                return this.updateProductDemo(productData);
+                console.error('API недоступен:', apiError);
+                throw apiError;
             }
         } catch (error) {
             console.error('Failed to update product:', error);
@@ -758,45 +743,6 @@ class ProductDetailComponent {
         }
     }
 
-    static createProductDemo(productData) {
-        // Демо-режим: создаем товар с временным ID
-        const newProduct = {
-            id: Date.now(),
-            ...productData,
-            category: productData.category
-        };
-
-        // Сохраняем в localStorage для демонстрации
-        try {
-            const products = JSON.parse(localStorage.getItem('demoProducts') || '[]');
-            products.push(newProduct);
-            localStorage.setItem('demoProducts', JSON.stringify(products));
-        } catch (e) {
-            console.warn('Failed to save product to localStorage:', e);
-        }
-
-        return {
-            success: true,
-            message: 'Товар создан (демо-режим)',
-            product: newProduct
-        };
-    }
-
-    static updateProductDemo(productData) {
-        // Демо-режим: обновляем товар
-        const updatedProduct = {
-            ...this.currentProduct,
-            ...productData
-        };
-
-        this.currentProduct = updatedProduct;
-
-        return {
-            success: true,
-            message: 'Товар обновлен (демо-режим)',
-            product: updatedProduct
-        };
-    }
 
     static getCategoryIdByName(categoryName) {
         // Ищем категорию в кэше или используем маппинг

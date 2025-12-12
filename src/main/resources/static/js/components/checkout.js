@@ -208,80 +208,12 @@ class CheckoutComponent {
 
             const order = await response.json();
             console.log('Order created:', order);
-            
-            // Сохраняем заказ в localStorage для демо-режима
-            // Это позволит видеть заказы даже если API временно недоступен
-            try {
-                const existingOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
-                // Проверяем, не существует ли уже этот заказ
-                const orderExists = existingOrders.some(o => o.id === order.id);
-                if (!orderExists) {
-                    // Преобразуем формат заказа из API в формат для localStorage
-                    // Убеждаемся, что userId - число
-                    const demoOrder = {
-                        id: order.id,
-                        userId: Number(order.userId) || order.userId,
-                        username: order.username || 'Пользователь',
-                        shippingAddress: order.shippingAddress || '',
-                        notes: order.notes || '',
-                        status: order.status || 'PENDING',
-                        totalAmount: order.totalAmount || 0,
-                        createdAt: order.createdAt || new Date().toISOString(),
-                        items: order.items || []
-                    };
-                    existingOrders.unshift(demoOrder);
-                    localStorage.setItem('demoOrders', JSON.stringify(existingOrders));
-                    console.log(`Заказ #${order.id} также сохранен в localStorage для демо-режима (userId: ${demoOrder.userId})`);
-                } else {
-                    console.log(`Заказ #${order.id} уже существует в localStorage`);
-                }
-            } catch (e) {
-                console.warn('Ошибка сохранения заказа в localStorage:', e);
-            }
-            
             return order;
 
         } catch (error) {
-            // Если API недоступен, симулируем успешное создание заказа
-            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                console.log('API недоступен, используем демо-режим');
-                return this.createDemoOrder(orderData);
-            }
+            console.error('Failed to create order:', error);
             throw error;
         }
-    }
-
-    static createDemoOrder(orderData) {
-        // Демо-режим: создаем заказ и сохраняем в localStorage
-        const user = JSON.parse(localStorage.getItem('user') || '{}');
-        const userId = user.id || user.userId || 1;
-        
-        const order = {
-            id: Date.now(),
-            userId: userId, // Сохраняем userId как число
-            username: user.username || 'Пользователь',
-            shippingAddress: orderData.shippingAddress || '',
-            notes: orderData.notes || '',
-            status: 'PENDING',
-            totalAmount: window.cart ? window.cart.getTotal() : 0,
-            createdAt: new Date().toISOString(),
-            items: window.cart ? window.cart.items.map((item, index) => ({
-                id: Date.now() + index,
-                productId: item.id,
-                productName: item.name || 'Товар',
-                productPrice: item.price,
-                quantity: item.quantity || 1,
-                subTotal: item.price * (item.quantity || 1)
-            })) : []
-        };
-
-        // Сохраняем заказ в localStorage
-        const existingOrders = JSON.parse(localStorage.getItem('demoOrders') || '[]');
-        existingOrders.unshift(order); // Добавляем в начало списка
-        localStorage.setItem('demoOrders', JSON.stringify(existingOrders));
-
-        console.log(`Демо-заказ #${order.id} сохранен в localStorage для пользователя ${userId}:`, order);
-        return order;
     }
 
     static showFieldError(fieldId, message) {

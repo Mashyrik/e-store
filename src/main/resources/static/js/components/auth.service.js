@@ -4,15 +4,8 @@ class AuthService {
     static async login(username, password) {
         console.log('AuthService: Attempting login for', username);
         
-        // Демо-режим
-        if (username === 'admin' && password === 'admin123') {
-            return this.demoLogin(username, 'ROLE_ADMIN');
-        } else if (username === 'user' && password === 'user123') {
-            return this.demoLogin(username, 'ROLE_USER');
-        }
-        
         try {
-            // Пробуем реальный API
+            // Запрос к API
             const response = await fetch('http://localhost:8080/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -22,7 +15,8 @@ class AuthService {
             });
             
             if (!response.ok) {
-                throw new Error('Неверное имя пользователя или пароль');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Неверное имя пользователя или пароль');
             }
             
             const data = await response.json();
@@ -30,25 +24,9 @@ class AuthService {
             return data;
             
         } catch (error) {
-            console.error('Real API login failed, using demo mode:', error);
-            
-            // Для любых других пользователей создаем демо-аккаунт
-            return this.demoLogin(username, 'ROLE_USER');
+            console.error('Login failed:', error);
+            throw error;
         }
-    }
-    
-    static demoLogin(username, role = 'ROLE_USER') {
-        const demoUser = {
-            token: 'demo-token-' + Date.now(),
-            id: Math.floor(Math.random() * 1000),
-            username: username,
-            email: username + '@demo.com',
-            role: role
-        };
-        
-        this.saveAuthData(demoUser);
-        console.log('Demo login successful:', demoUser);
-        return demoUser;
     }
     
     static async register(userData) {
@@ -73,10 +51,8 @@ class AuthService {
             return data;
             
         } catch (error) {
-            console.error('Real API registration failed:', error);
-            
-            // Демо-режим
-            return { message: 'Регистрация успешна! Теперь вы можете войти.' };
+            console.error('Registration failed:', error);
+            throw error;
         }
     }
     

@@ -41,236 +41,50 @@ class ProductsComponent {
 
     static async loadProducts() {
         try {
-            // Пробуем загрузить товары из API
+            // Загружаем товары из API
             const response = await fetch('http://localhost:8080/api/products');
             
-            if (response.ok) {
-                const products = await response.json();
-                console.log('Products loaded from API:', products.length);
-                
-                // Преобразуем товары в нужный формат
-                return products.map(product => {
-                    // Обрабатываем цену (BigDecimal может быть объектом или числом)
-                    let price = product.price;
-                    if (typeof price === 'object' && price !== null) {
-                        price = parseFloat(price) || 0;
-                    }
-                    price = parseFloat(price) || 0;
-                    
-                    // Обрабатываем категорию
-                    let category = '';
-                    if (product.category) {
-                        if (typeof product.category === 'object' && product.category.name) {
-                            category = product.category.name;
-                        } else if (typeof product.category === 'string') {
-                            category = product.category;
-                        }
-                    }
-                    
-                    return {
-                        id: product.id,
-                        name: product.name || '',
-                        price: price,
-                        model: product.model || '',
-                        category: category,
-                        stockQuantity: product.stockQuantity || 0,
-                        description: product.description || ''
-                    };
-                });
-            } else {
-                console.warn('Failed to load products from API, using mock data');
-                return this.getMockProducts();
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-        } catch (error) {
-            console.warn('API недоступен, используем мок-данные:', error.message);
-            return this.getMockProducts();
-        }
-    }
 
-    static getMockProducts() {
-        // Мок-данные на случай если API недоступен
-        return [
-            {
-                id: 1,
-                name: 'iPhone 15 Pro',
-                price: 1899,
-                model: 'A2848',
-                category: 'Смартфоны',
-                stockQuantity: 10,
-                description: 'Новейший смартфон от Apple'
-            },
-            {
-                id: 2,
-                name: 'Samsung Galaxy S24',
-                price: 1699,
-                model: 'SM-S921B',
-                category: 'Смартфоны',
-                stockQuantity: 8,
-                description: 'Флагманский смартфон от Samsung'
-            },
-            {
-                id: 3,
-                name: 'MacBook Air M2',
-                price: 3499,
-                model: 'M2',
-                category: 'Ноутбуки',
-                stockQuantity: 5,
-                description: 'Ультратонкий ноутбук от Apple'
-            },
-            {
-                id: 4,
-                name: 'Sony WH-1000XM5',
-                price: 799,
-                model: 'WH-1000XM5',
-                category: 'Аудиотехника',
-                stockQuantity: 15,
-                description: 'Беспроводные наушники с шумоподавлением'
-            },
-            {
-                id: 5,
-                name: 'Xiaomi 14 Pro',
-                price: 1299,
-                model: 'Xiaomi 14 Pro',
-                category: 'Смартфоны',
-                stockQuantity: 12,
-                description: 'Флагманский смартфон от Xiaomi с отличной камерой'
-            },
-            {
-                id: 6,
-                name: 'Dell XPS 15',
-                price: 4299,
-                model: 'XPS 15 9530',
-                category: 'Ноутбуки',
-                stockQuantity: 6,
-                description: 'Мощный ноутбук для работы и творчества'
-            },
-            {
-                id: 7,
-                name: 'AirPods Pro 2',
-                price: 699,
-                model: 'A2931',
-                category: 'Аудиотехника',
-                stockQuantity: 20,
-                description: 'Беспроводные наушники с активным шумоподавлением'
-            },
-            {
-                id: 8,
-                name: 'ASUS ROG Strix G15',
-                price: 3899,
-                model: 'G513IE',
-                category: 'Ноутбуки',
-                stockQuantity: 4,
-                description: 'Игровой ноутбук с мощной видеокартой'
-            },
-            {
-                id: 9,
-                name: 'OnePlus 12',
-                price: 1199,
-                model: 'CPH2581',
-                category: 'Смартфоны',
-                stockQuantity: 9,
-                description: 'Флагманский смартфон с быстрой зарядкой'
-            },
-            {
-                id: 10,
-                name: 'HP Spectre x360',
-                price: 3799,
-                model: '14-ef2013dx',
-                category: 'Ноутбуки',
-                stockQuantity: 7,
-                description: 'Премиальный ноутбук-трансформер'
-            },
-            {
-                id: 11,
-                name: 'JBL Flip 6',
-                price: 399,
-                model: 'JBLFLIP6BLKAM',
-                category: 'Аудиотехника',
-                stockQuantity: 18,
-                description: 'Портативная Bluetooth колонка'
-            },
-            {
-                id: 12,
-                name: 'Google Pixel 8',
-                price: 1399,
-                model: 'GE9DP',
-                category: 'Смартфоны',
-                stockQuantity: 11,
-                description: 'Смартфон с лучшей камерой от Google'
-            },
-            {
-                id: 13,
-                name: 'Lenovo ThinkPad X1 Carbon',
-                price: 4499,
-                model: '21HMCTO1WW',
-                category: 'Ноутбуки',
-                stockQuantity: 5,
-                description: 'Бизнес-ноутбук премиум класса'
-            },
-            {
-                id: 14,
-                name: 'Bose QuietComfort 45',
-                price: 899,
-                model: 'QC45',
-                category: 'Аудиотехника',
-                stockQuantity: 14,
-                description: 'Наушники с премиальным шумоподавлением'
-            },
-            {
-                id: 15,
-                name: 'Honor Magic 6 Pro',
-                price: 1099,
-                model: 'BVL-AN16',
-                category: 'Смартфоны',
-                stockQuantity: 13,
-                description: 'Флагманский смартфон с продвинутой камерой'
-            },
-            {
-                id: 16,
-                name: 'Sony WF-1000XM5',
-                price: 599,
-                model: 'WF-1000XM5',
-                category: 'Аудиотехника',
-                stockQuantity: 16,
-                description: 'Беспроводные TWS наушники с шумоподавлением'
-            },
-            {
-                id: 17,
-                name: 'Nothing Phone 2',
-                price: 999,
-                model: 'A142',
-                category: 'Смартфоны',
-                stockQuantity: 10,
-                description: 'Уникальный смартфон с прозрачным дизайном'
-            },
-            {
-                id: 18,
-                name: 'Microsoft Surface Laptop 5',
-                price: 3999,
-                model: '1950',
-                category: 'Ноутбуки',
-                stockQuantity: 6,
-                description: 'Элегантный ноутбук от Microsoft'
-            },
-            {
-                id: 19,
-                name: 'Sennheiser Momentum 4',
-                price: 749,
-                model: 'M4AEBT',
-                category: 'Аудиотехника',
-                stockQuantity: 12,
-                description: 'Премиальные наушники с отличным звуком'
-            },
-            {
-                id: 20,
-                name: 'Motorola Edge 40 Pro',
-                price: 899,
-                model: 'XT2301-4',
-                category: 'Смартфоны',
-                stockQuantity: 8,
-                description: 'Смартфон с изогнутым экраном и быстрой зарядкой'
-            }
-        ];
+            const products = await response.json();
+            console.log('Products loaded from API:', products.length);
+            
+            // Преобразуем товары в нужный формат
+            return products.map(product => {
+                // Обрабатываем цену (BigDecimal может быть объектом или числом)
+                let price = product.price;
+                if (typeof price === 'object' && price !== null) {
+                    price = parseFloat(price) || 0;
+                }
+                price = parseFloat(price) || 0;
+                
+                // Обрабатываем категорию
+                let category = '';
+                if (product.category) {
+                    if (typeof product.category === 'object' && product.category.name) {
+                        category = product.category.name;
+                    } else if (typeof product.category === 'string') {
+                        category = product.category;
+                    }
+                }
+                
+                return {
+                    id: product.id,
+                    name: product.name || '',
+                    price: price,
+                    model: product.model || '',
+                    category: category,
+                    stockQuantity: product.stockQuantity || 0,
+                    description: product.description || ''
+                };
+            });
+        } catch (error) {
+            console.error('Failed to load products from API:', error);
+            this.showError('Не удалось загрузить товары из базы данных. Проверьте подключение к серверу.');
+            return [];
+        }
     }
 
     static renderProducts(products) {
