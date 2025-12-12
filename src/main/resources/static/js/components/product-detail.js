@@ -11,18 +11,26 @@ class ProductDetailComponent {
 
         // Получаем ID товара из URL
         const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('id');
+        const productIdParam = urlParams.get('id');
 
         // Настраиваем обработчики
         this.setupEventListeners();
 
         // Если нет ID, значит создание нового товара (только для админа)
-        if (!productId) {
+        if (!productIdParam) {
             if (this.isAdmin) {
                 await this.initNewProduct();
             } else {
                 this.showError('Товар не найден');
             }
+            return;
+        }
+
+        // Преобразуем ID в число
+        const productId = parseInt(productIdParam);
+        if (isNaN(productId)) {
+            console.error('Некорректный ID товара:', productIdParam);
+            this.showError('Некорректный ID товара');
             return;
         }
 
@@ -157,25 +165,30 @@ class ProductDetailComponent {
 
     static async loadProduct(productId) {
         try {
+            console.log('Загрузка товара с ID:', productId);
+            
             // Пытаемся загрузить через API
             let product = await this.loadProductFromAPI(productId);
 
             // Если не получилось, загружаем из локального кэша
             if (!product) {
+                console.log('Товар не найден в API, пытаемся загрузить из кэша...');
                 product = await this.loadProductFromCache(productId);
             }
 
             if (!product) {
+                console.error('Товар не найден ни в API, ни в кэше');
                 this.showError('Товар не найден');
                 return;
             }
 
+            console.log('Товар успешно загружен:', product);
             this.currentProduct = product;
             this.renderProduct(product);
 
         } catch (error) {
-            console.error('Error loading product:', error);
-            this.showError('Ошибка загрузки товара');
+            console.error('Ошибка загрузки товара:', error);
+            this.showError('Ошибка загрузки товара: ' + error.message);
         }
     }
 
@@ -184,24 +197,80 @@ class ProductDetailComponent {
             const response = await fetch(`http://localhost:8080/api/products/${productId}`);
             
             if (!response.ok) {
+                if (response.status === 404) {
+                    console.log(`Товар с ID ${productId} не найден`);
+                } else {
+                    console.error(`Ошибка загрузки товара: HTTP ${response.status}`);
+                }
                 return null;
             }
 
             const product = await response.json();
             console.log('Product loaded from API:', product);
-            return product;
+            
+            // Преобразуем данные в нужный формат (как в ProductsComponent.loadProducts)
+            return this.normalizeProductData(product);
 
         } catch (error) {
-            console.log('API недоступен, используем кэш');
+            console.error('Ошибка при загрузке товара из API:', error);
             return null;
         }
     }
 
+    static normalizeProductData(product) {
+        // Обрабатываем цену (BigDecimal может быть объектом или числом)
+        let price = product.price;
+        if (typeof price === 'object' && price !== null) {
+            price = parseFloat(price) || 0;
+        }
+        price = parseFloat(price) || 0;
+        
+        // Обрабатываем категорию
+        let category = '';
+        if (product.category) {
+            if (typeof product.category === 'object' && product.category.name) {
+                category = product.category.name;
+            } else if (typeof product.category === 'string') {
+                category = product.category;
+            }
+        }
+        
+        return {
+            id: product.id,
+            name: product.name || '',
+            price: price,
+            model: product.model || '',
+            category: category,
+            stockQuantity: product.stockQuantity || 0,
+            description: product.description || ''
+        };
+    }
+
     static async loadProductFromCache(productId) {
-        // Загружаем все товары и ищем нужный
-        const allProducts = await ProductsComponent.loadProducts();
-        const product = allProducts.find(p => p.id === parseInt(productId));
-        return product || null;
+        try {
+            // Проверяем, доступен ли ProductsComponent
+            if (typeof ProductsComponent !== 'undefined' && ProductsComponent.loadProducts) {
+                // Загружаем все товары и ищем нужный
+                const allProducts = await ProductsComponent.loadProducts();
+                const product = allProducts.find(p => p.id === parseInt(productId));
+                return product || null;
+            } else {
+                // Если ProductsComponent недоступен, загружаем напрямую из API
+                console.log('ProductsComponent недоступен, загружаем все товары напрямую');
+                const response = await fetch('http://localhost:8080/api/products');
+                if (response.ok) {
+                    const products = await response.json();
+                    const product = products.find(p => p.id === parseInt(productId));
+                    if (product) {
+                        return this.normalizeProductData(product);
+                    }
+                }
+                return null;
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке товара из кэша:', error);
+            return null;
+        }
     }
 
     static renderProduct(product) {
