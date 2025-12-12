@@ -12,7 +12,6 @@
     <header class="header">
         <nav class="navbar container">
             <div class="logo">
-                <span>🏪</span>
                 E-Store
             </div>
             <a href="index.html" class="nav-links" style="color: white; text-decoration: none;">
@@ -25,7 +24,6 @@
     <main class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
-                <div class="auth-logo">🔐</div>
                 <h1 class="auth-title">Вход в систему</h1>
                 <p class="auth-subtitle">Войдите в свой аккаунт для доступа ко всем функциям магазина</p>
             </div>
@@ -72,21 +70,9 @@
                         <div class="error-message" id="loginPasswordError"></div>
                     </div>
                     
-                    <div class="remember-me">
-                        <input type="checkbox" id="rememberMe">
-                        <label for="rememberMe">Запомнить меня</label>
-                    </div>
-                    
                     <button type="submit" class="btn btn-primary auth-button" id="loginButton">
-                        <span class="spinner hidden"></span>
                         <span id="loginButtonText">Войти</span>
                     </button>
-                    
-                    <div class="test-credentials">
-                        <h4>Тестовые аккаунты:</h4>
-                        <p><strong>Администратор:</strong> admin / admin123</p>
-                        <p><strong>Пользователь:</strong> user / user123</p>
-                    </div>
                 </form>
             </div>
             
@@ -153,7 +139,6 @@
                     </div>
                     
                     <button type="submit" class="btn btn-primary auth-button" id="registerButton">
-                        <span class="spinner hidden"></span>
                         <span id="registerButtonText">Создать аккаунт</span>
                     </button>
                     
@@ -185,7 +170,7 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 E-Store. Все права защищены.</p>
+                <p>&copy; 2025 E-Store. Все права защищены.</p>
             </div>
         </div>
     </footer>
@@ -208,11 +193,9 @@
             
             const loginButton = document.getElementById('loginButton');
             const loginButtonText = document.getElementById('loginButtonText');
-            const loginSpinner = loginButton.querySelector('.spinner');
             
             const registerButton = document.getElementById('registerButton');
             const registerButtonText = document.getElementById('registerButtonText');
-            const registerSpinner = registerButton.querySelector('.spinner');
             
             loginTab.addEventListener('click', () => switchTab('login'));
             registerTab.addEventListener('click', () => switchTab('register'));
@@ -253,7 +236,6 @@
                 
                 loginButton.disabled = true;
                 loginButtonText.textContent = 'Вход...';
-                loginSpinner.classList.remove('hidden');
                 
                 try {
                     if (typeof AuthService !== 'undefined' && AuthService.login) {
@@ -288,7 +270,6 @@
                 } finally {
                     loginButton.disabled = false;
                     loginButtonText.textContent = 'Войти';
-                    loginSpinner.classList.add('hidden');
                 }
             });
             
@@ -346,7 +327,6 @@
                 
                 registerButton.disabled = true;
                 registerButtonText.textContent = 'Регистрация...';
-                registerSpinner.classList.remove('hidden');
                 
                 try {
                     if (typeof AuthService !== 'undefined' && AuthService.register) {
@@ -379,7 +359,6 @@
                 } finally {
                     registerButton.disabled = false;
                     registerButtonText.textContent = 'Создать аккаунт';
-                    registerSpinner.classList.add('hidden');
                 }
             });
             
