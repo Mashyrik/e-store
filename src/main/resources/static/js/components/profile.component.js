@@ -247,6 +247,38 @@ class ProfileComponent {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.logout());
         }
+
+        // Обработчики для админских вкладок
+        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
+        if (refreshOrdersBtn) {
+            refreshOrdersBtn.addEventListener('click', () => this.loadAdminOrders());
+        }
+
+        const orderStatusFilter = document.getElementById('orderStatusFilter');
+        if (orderStatusFilter) {
+            orderStatusFilter.addEventListener('change', () => this.loadAdminOrders());
+        }
+
+        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+        if (refreshUsersBtn) {
+            refreshUsersBtn.addEventListener('click', () => this.loadAdminUsers());
+        }
+
+        const userSearch = document.getElementById('userSearch');
+        if (userSearch) {
+            userSearch.addEventListener('input', (e) => {
+                // Простая фильтрация по имени или email
+                const searchTerm = e.target.value.toLowerCase();
+                const container = document.getElementById('usersList');
+                if (container) {
+                    const rows = container.querySelectorAll('tbody tr');
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                }
+            });
+        }
     }
 
     static switchTab(tabName) {
@@ -259,6 +291,105 @@ class ProfileComponent {
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}Tab`);
         });
+
+        // Загружаем данные для админских вкладок
+        if (tabName === 'admin') {
+            this.loadAdminOrders();
+        } else if (tabName === 'users') {
+            this.loadAdminUsers();
+        }
+    }
+
+    static async loadAdminOrders() {
+        const container = document.getElementById('adminOrdersList');
+        if (!container) return;
+
+        try {
+            container.innerHTML = '<p>Загрузка заказов...</p>';
+            
+            // Проверяем, доступен ли AdminService
+            if (typeof AdminService === 'undefined') {
+                container.innerHTML = '<p style="color: red;">AdminService не загружен. Убедитесь, что admin.service.js подключен.</p>';
+                return;
+            }
+
+            const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+            const orders = await AdminService.getOrders(statusFilter);
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p>Нет заказов</p>';
+                return;
+            }
+
+            // Используем метод создания карточки заказа из ProfileComponent
+            const html = orders.map(order => this.createOrderCard(order)).join('');
+            container.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading admin orders:', error);
+            container.innerHTML = `<p style="color: red;">Ошибка загрузки заказов: ${error.message}</p>`;
+        }
+    }
+
+    static async loadAdminUsers() {
+        const container = document.getElementById('usersList');
+        if (!container) return;
+
+        try {
+            container.innerHTML = '<p>Загрузка пользователей...</p>';
+            
+            // Проверяем, доступен ли AdminService
+            if (typeof AdminService === 'undefined') {
+                container.innerHTML = '<p style="color: red;">AdminService не загружен. Убедитесь, что admin.service.js подключен.</p>';
+                return;
+            }
+
+            const users = await AdminService.getUsers(true);
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p>Нет пользователей</p>';
+                return;
+            }
+
+            // Создаем таблицу пользователей
+            const html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">ID</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Имя</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Email</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Роль</th>
+                                <th style="padding: 1rem; text-align: left; border-bottom: 2px solid #e5e7eb; font-weight: 600;">Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(user => `
+                                <tr style="border-bottom: 1px solid #e5e7eb;">
+                                    <td style="padding: 1rem;">${user.id}</td>
+                                    <td style="padding: 1rem;"><strong>${user.username}</strong></td>
+                                    <td style="padding: 1rem;">${user.email}</td>
+                                    <td style="padding: 1rem;">
+                                        <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; background: ${user.role === 'ROLE_ADMIN' ? '#667eea' : '#10b981'}; color: white;">
+                                            ${user.role === 'ROLE_ADMIN' ? 'Админ' : 'Пользователь'}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 1rem;">
+                                        <span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; background: ${user.enabled ? '#d1fae5' : '#fee2e2'}; color: ${user.enabled ? '#065f46' : '#991b1b'};">
+                                            ${user.enabled ? 'Активен' : 'Заблокирован'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML = html;
+        } catch (error) {
+            console.error('Error loading admin users:', error);
+            container.innerHTML = `<p style="color: red;">Ошибка загрузки пользователей: ${error.message}</p>`;
+        }
     }
 
     static async saveSettings() {

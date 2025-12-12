@@ -57,7 +57,7 @@
                     <!-- Админские ссылки (видны только админу) -->
                     <div id="adminLinks" style="display: none; margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
                         <h4 style="color: #667eea; margin-bottom: 1rem;">Администрирование</h4>
-                        <a href="admin.html" class="nav-link admin-link" data-tab="admin">
+                        <a href="#admin" class="nav-link admin-link" data-tab="admin">
                             👑 Панель управления
                         </a>
                         <a href="#users" class="nav-link admin-link" data-tab="users">
@@ -136,6 +136,41 @@
                         <button class="btn btn-primary" id="saveSettingsBtn">Сохранить изменения</button>
                     </div>
                 </div>
+
+                <!-- Вкладка "Панель управления" (для админа) -->
+                <div id="adminTab" class="tab-content">
+                    <h2>Панель управления</h2>
+                    <div class="admin-toolbar" style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <select id="orderStatusFilter" class="filter-select" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ddd;">
+                                <option value="all">Все статусы</option>
+                                <option value="PENDING">Ожидание</option>
+                                <option value="CONFIRMED">Подтвержден</option>
+                                <option value="SHIPPED">Отправлен</option>
+                                <option value="DELIVERED">Доставлен</option>
+                                <option value="CANCELLED">Отменен</option>
+                            </select>
+                            <button class="btn btn-primary" id="refreshOrdersBtn" style="padding: 0.5rem 1rem;">🔄 Обновить</button>
+                        </div>
+                    </div>
+                    <div id="adminOrdersList" class="orders-list">
+                        <p>Загрузка заказов...</p>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Пользователи" (для админа) -->
+                <div id="usersTab" class="tab-content">
+                    <h2>Пользователи</h2>
+                    <div class="admin-toolbar" style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <input type="text" id="userSearch" placeholder="Поиск пользователей..." class="search-input" style="padding: 0.5rem; border-radius: 6px; border: 1px solid #ddd; flex: 1;">
+                            <button class="btn btn-primary" id="refreshUsersBtn" style="padding: 0.5rem 1rem;">🔄 Обновить</button>
+                        </div>
+                    </div>
+                    <div id="usersList" class="orders-list">
+                        <p>Загрузка пользователей...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -163,6 +198,7 @@
 
 <!-- JavaScript -->
 <script src="js/components/profile.service.js"></script>
+<script src="js/components/admin.service.js"></script>
 <script src="js/components/profile.component.js"></script>
 <script src="js/utils/app.js"></script>
 <!-- auth.component.js не нужен на странице профиля -->
