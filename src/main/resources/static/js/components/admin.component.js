@@ -15,8 +15,8 @@ class AdminComponent {
         // Настраиваем обработчики событий
         this.setupEventListeners();
 
-        // Загружаем первую вкладку (по умолчанию - товары, но можно изменить на orders)
-        const defaultTab = new URLSearchParams(window.location.search).get('tab') || 'products';
+        // Загружаем первую вкладку (по умолчанию - панель управления с заказами)
+        const defaultTab = new URLSearchParams(window.location.search).get('tab') || 'dashboard';
         await this.loadTab(defaultTab);
     }
 
@@ -54,17 +54,18 @@ class AdminComponent {
             this.showTabLoading(tabName);
 
             switch (tabName) {
+                case 'dashboard':
+                    const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+                    await this.loadOrders(statusFilter);
+                    break;
                 case 'products':
                     await this.loadProducts();
                     break;
                 case 'categories':
                     await this.loadCategories();
                     break;
-                case 'orders':
-                    await this.loadOrders();
-                    break;
                 case 'users':
-                    await this.loadUsers();
+                    await this.loadUsers(true); // Всегда обновляем пользователей
                     break;
                 case 'analytics':
                     await this.loadAnalytics();
@@ -124,10 +125,10 @@ class AdminComponent {
         }
     }
 
-    static async loadUsers() {
+    static async loadUsers(forceRefresh = false) {
         try {
-            console.log('Loading users...');
-            const users = await AdminService.getUsers(false);
+            console.log('Loading users...', 'forceRefresh:', forceRefresh);
+            const users = await AdminService.getUsers(forceRefresh);
             console.log('Users loaded:', users.length, users);
             this.renderUsersTable(users);
         } catch (error) {
