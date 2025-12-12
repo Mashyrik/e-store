@@ -349,6 +349,12 @@ class ProductDetailComponent {
                 const userActions = document.getElementById('userActions');
                 if (adminActions) adminActions.style.display = 'block';
                 if (userActions) userActions.style.display = 'none';
+                
+                // Скрываем кнопку "Создать новый товар" при редактировании существующего товара
+                const createNewBtn = document.getElementById('createNewProductBtn');
+                if (createNewBtn) {
+                    createNewBtn.style.display = 'none';
+                }
             }
         }
 
@@ -479,12 +485,24 @@ class ProductDetailComponent {
         if (saveBtn) saveBtn.style.display = 'block';
         if (cancelBtn) cancelBtn.style.display = 'block';
         
+        // Скрываем кнопку "Создать новый товар" при редактировании существующего товара
+        const createNewBtn = document.getElementById('createNewProductBtn');
+        if (createNewBtn && !this.isNewProduct) {
+            createNewBtn.style.display = 'none';
+        }
+        
         // Скрываем элементы, не нужные при редактировании
         if (stockStatus) stockStatus.style.display = 'none';
         if (quantitySelector) quantitySelector.style.display = 'none';
     }
 
     static disableEditMode() {
+        // Если это новый товар, переходим на страницу товаров
+        if (this.isNewProduct) {
+            window.location.href = 'products.html';
+            return;
+        }
+
         this.isEditMode = false;
         this.isNewProduct = false;
 
