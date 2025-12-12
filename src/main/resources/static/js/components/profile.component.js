@@ -171,6 +171,71 @@ class ProfileComponent {
         `;
     }
 
+    static createAdminOrderCard(order) {
+        const statusClass = order.status ? order.status.toLowerCase() : 'pending';
+        const itemsHtml = order.items && order.items.length > 0
+            ? order.items.map(item => `
+                <div class="order-item-row">
+                    <span class="order-item-name">${item.productName || 'Товар'}</span>
+                    <span class="order-item-quantity">× ${item.quantity || 1}</span>
+                    <span class="order-item-price">${ProfileService.formatPrice(item.subTotal || item.productPrice * (item.quantity || 1))}</span>
+                </div>
+            `).join('')
+            : '<p>Товары не найдены</p>';
+
+        // Получаем текст статуса для отображения
+        const getStatusText = (status) => {
+            const statusMap = {
+                'PENDING': 'Ожидание',
+                'CONFIRMED': 'Подтвержден',
+                'SHIPPED': 'Отправлен',
+                'DELIVERED': 'Доставлен',
+                'CANCELLED': 'Отменен'
+            };
+            return statusMap[status] || status;
+        };
+
+        return `
+            <div class="order-card">
+                <div class="order-header">
+                    <div>
+                        <span class="order-id">Заказ #${order.id || 'N/A'}</span>
+                        <span class="order-date">${ProfileService.formatDate(order.createdAt)}</span>
+                        ${order.username ? `<div style="margin-top: 0.25rem; font-size: 0.9rem; color: #6b7280;">Пользователь: ${order.username}</div>` : ''}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                        <select class="status-select" 
+                                onchange="ProfileComponent.changeOrderStatus(${order.id}, this.value)"
+                                style="padding: 0.5rem 0.75rem; border-radius: 6px; border: 2px solid #e5e7eb; font-size: 0.875rem; cursor: pointer; background: white; min-width: 150px;"
+                                data-order-id="${order.id}">
+                            <option value="PENDING" ${order.status === 'PENDING' ? 'selected' : ''}>Ожидание</option>
+                            <option value="CONFIRMED" ${order.status === 'CONFIRMED' ? 'selected' : ''}>Подтвержден</option>
+                            <option value="SHIPPED" ${order.status === 'SHIPPED' ? 'selected' : ''}>Отправлен</option>
+                            <option value="DELIVERED" ${order.status === 'DELIVERED' ? 'selected' : ''}>Доставлен</option>
+                            <option value="CANCELLED" ${order.status === 'CANCELLED' ? 'selected' : ''}>Отменен</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="order-items">
+                    ${itemsHtml}
+                </div>
+                ${order.shippingAddress ? `
+                    <div class="order-address">
+                        <strong>Адрес доставки:</strong> ${order.shippingAddress}
+                    </div>
+                ` : ''}
+                ${order.notes ? `
+                    <div class="order-notes">
+                        <strong>Комментарий:</strong> ${order.notes}
+                    </div>
+                ` : ''}
+                <div class="order-total">
+                    Итого: ${ProfileService.formatPrice(order.totalAmount || 0)}
+                </div>
+            </div>
+        `;
+    }
+
     static checkAdminAccess() {
         const user = JSON.parse(localStorage.getItem('user')) || {};
         const adminLinks = document.getElementById('adminLinks');
@@ -321,8 +386,8 @@ class ProfileComponent {
                 return;
             }
 
-            // Используем метод создания карточки заказа из ProfileComponent
-            const html = orders.map(order => this.createOrderCard(order)).join('');
+            // Используем метод создания карточки заказа для админа с возможностью изменения статуса
+            const html = orders.map(order => this.createAdminOrderCard(order)).join('');
             container.innerHTML = html;
         } catch (error) {
             console.error('Error loading admin orders:', error);
@@ -389,6 +454,39 @@ class ProfileComponent {
         } catch (error) {
             console.error('Error loading admin users:', error);
             container.innerHTML = `<p style="color: red;">Ошибка загрузки пользователей: ${error.message}</p>`;
+        }
+    }
+
+    static async changeOrderStatus(orderId, newStatus) {
+        try {
+            // Проверяем, доступен ли AdminService
+            if (typeof AdminService === 'undefined') {
+                this.showNotification('AdminService не загружен', 'error');
+                return;
+            }
+
+            // Получаем текущий фильтр статуса
+            const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
+            
+            const result = await AdminService.updateOrderStatus(orderId, newStatus);
+
+            if (result.success) {
+                // Получаем текст статуса для уведомления
+                const statusText = ProfileService.getStatusText(newStatus);
+                this.showNotification(`Статус заказа #${orderId} обновлен на "${statusText}"`, 'success');
+                
+                // Перезагружаем заказы для обновления списка с сохранением фильтра
+                await this.loadAdminOrders();
+            } else {
+                this.showNotification(result.message || 'Ошибка обновления статуса', 'error');
+                // Перезагружаем заказы чтобы вернуть предыдущий статус
+                await this.loadAdminOrders();
+            }
+        } catch (error) {
+            console.error('Error changing order status:', error);
+            this.showNotification(`Ошибка обновления статуса заказа: ${error.message}`, 'error');
+            // Перезагружаем заказы
+            await this.loadAdminOrders();
         }
     }
 
