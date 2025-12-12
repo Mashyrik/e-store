@@ -314,19 +314,9 @@ class ProfileComponent {
         }
 
         // Обработчики для админских вкладок
-        const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
-        if (refreshOrdersBtn) {
-            refreshOrdersBtn.addEventListener('click', () => this.loadAdminOrders());
-        }
-
         const orderStatusFilter = document.getElementById('orderStatusFilter');
         if (orderStatusFilter) {
             orderStatusFilter.addEventListener('change', () => this.loadAdminOrders());
-        }
-
-        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
-        if (refreshUsersBtn) {
-            refreshUsersBtn.addEventListener('click', () => this.loadAdminUsers());
         }
 
         const userSearch = document.getElementById('userSearch');
