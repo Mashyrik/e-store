@@ -4,9 +4,6 @@ import com.estore.estore.dto.request.ProductRequest;
 import com.estore.estore.exception.BusinessException;
 import com.estore.estore.model.Product;
 import com.estore.estore.service.ProductService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,7 +17,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
-@Tag(name = "Товары", description = "API для управления товарами")
 public class ProductController {
 
     @Autowired
@@ -28,13 +24,11 @@ public class ProductController {
 
     // --- Публичные GET методы ---
     @GetMapping
-    @Operation(summary = "Получить все товары", description = "Возвращает список всех доступных товаров")
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
 
     @GetMapping("/page")
-    @Operation(summary = "Получить товары с пагинацией", description = "Возвращает товары с поддержкой пагинации и сортировки")
     public ResponseEntity<Page<Product>> getProductsPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -51,7 +45,6 @@ public class ProductController {
 
 
     @GetMapping("/{id}")
-    @Operation(summary = "Получить товар по ID", description = "Возвращает информацию о конкретном товаре")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         return productService.getProductById(id)
                 .map(ResponseEntity::ok)
@@ -61,8 +54,6 @@ public class ProductController {
 
     // --- Защищенные методы (ADMIN) ---
     @PostMapping
-    @Operation(summary = "Создать товар", description = "Создание нового товара (только для администраторов)")
-    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductRequest productRequest) {
         try {
             Product product = productService.createProduct(productRequest);
@@ -73,8 +64,6 @@ public class ProductController {
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Обновить товар", description = "Обновление информации о товаре (только для администраторов)")
-    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest productRequest) {
         try {
             Product updatedProduct = productService.updateProduct(id, productRequest);
@@ -85,8 +74,6 @@ public class ProductController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Удалить товар", description = "Удаление товара (только для администраторов)")
-    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);

@@ -19,15 +19,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
-@Tag(name = "Аутентификация", description = "API для регистрации и входа пользователей")
 public class AuthController {
 
     @Autowired
@@ -40,7 +37,6 @@ public class AuthController {
     private UserService userService;
 
     @PostMapping("/login")
-    @Operation(summary = "Вход пользователя", description = "Аутентификация пользователя и получение JWT токена")
     public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -66,7 +62,6 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Регистрация пользователя", description = "Создание нового аккаунта пользователя")
     public ResponseEntity<Map<String, String>> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userService.existsByUsername(registerRequest.getUsername())) {
             throw new DuplicateResourceException("Username is already taken");

@@ -70,11 +70,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/status").permitAll()
-
-                        // Swagger UI и документация API
-                        .requestMatchers("/v3/api-docs/**").permitAll() // Схема API (JSON/YAML)
-                        .requestMatchers("/swagger-ui/**").permitAll()   // Сам интерфейс Swagger UI
-                        .requestMatchers("/swagger-ui.html").permitAll()  // Альтернативный путь
                         
                         // Статические ресурсы (HTML, CSS, JS файлы)
                         .requestMatchers("/*.html", "/*.css", "/*.js", "/css/**", "/js/**", "/images/**").permitAll()
