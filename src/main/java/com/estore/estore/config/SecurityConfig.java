@@ -43,7 +43,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Разрешаем все origins для разработки (в продакшене нужно указать конкретные)
+        // Разрешаем все origins для разработки 
         // Используем setAllowedOrigins с null для разрешения всех origins без credentials
         // или setAllowedOriginPatterns для паттернов
         configuration.setAllowedOriginPatterns(List.of("*"));
@@ -71,9 +71,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/status").permitAll()
 
-
+                        // Swagger UI и документация API
                         .requestMatchers("/v3/api-docs/**").permitAll() // Схема API (JSON/YAML)
                         .requestMatchers("/swagger-ui/**").permitAll()   // Сам интерфейс Swagger UI
+                        .requestMatchers("/swagger-ui.html").permitAll()  // Альтернативный путь
+                        
+                        // Статические ресурсы (HTML, CSS, JS файлы)
+                        .requestMatchers("/*.html", "/*.css", "/*.js", "/css/**", "/js/**", "/images/**").permitAll()
 
                         // GET запросы для всех (публичный доступ)
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
