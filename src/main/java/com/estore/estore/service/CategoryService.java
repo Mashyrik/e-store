@@ -37,32 +37,12 @@ public class CategoryService {
         return categoryRepository.save(category);
     }
 
-    // Старый метод для обратной совместимости
-    public Category createCategory(Category category) {
-        // Проверяем, нет ли уже категории с таким именем
-        if (categoryRepository.existsByName(category.getName())) {
-            throw new RuntimeException("Category with name '" + category.getName() + "' already exists");
-        }
-        return categoryRepository.save(category);
-    }
-
     public Category updateCategory(Long id, CategoryRequest categoryRequest) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
 
         category.setName(categoryRequest.getName());
         category.setDescription(categoryRequest.getDescription());
-
-        return categoryRepository.save(category);
-    }
-
-    // Старый метод для обратной совместимости
-    public Category updateCategory(Long id, Category categoryDetails) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
-
-        category.setName(categoryDetails.getName());
-        category.setDescription(categoryDetails.getDescription());
 
         return categoryRepository.save(category);
     }

@@ -42,17 +42,8 @@ public class ProductService {
         return productRepository.findByCategoryId(categoryId, pageable);
     }
 
-    // Существующие методы остаются
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
-    }
-
-    public List<Product> getProductsByCategory(Long categoryId) {
-        return productRepository.findByCategoryId(categoryId);
-    }
-
-    public List<Product> searchProducts(String query) {
-        return productRepository.searchProducts(query);
     }
 
     public List<Product> getAvailableProducts() {
@@ -78,14 +69,6 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    // Старый метод для обратной совместимости
-    public Product createProduct(Product product) {
-        if (productRepository.existsByModel(product.getModel())) {
-            throw new RuntimeException("Product with model '" + product.getModel() + "' already exists");
-        }
-        return productRepository.save(product);
-    }
-
     public Product updateProduct(Long id, ProductRequest productRequest) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
@@ -101,24 +84,6 @@ public class ProductService {
         product.setPrice(productRequest.getPrice());
         product.setModel(productRequest.getModel());
         product.setStockQuantity(productRequest.getStockQuantity());
-
-        return productRepository.save(product);
-    }
-
-    // Старый метод для обратной совместимости
-    public Product updateProduct(Long id, Product productDetails) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-
-        product.setName(productDetails.getName());
-        product.setDescription(productDetails.getDescription());
-        product.setPrice(productDetails.getPrice());
-        product.setModel(productDetails.getModel());
-        product.setStockQuantity(productDetails.getStockQuantity());
-
-        if (productDetails.getCategory() != null) {
-            product.setCategory(productDetails.getCategory());
-        }
 
         return productRepository.save(product);
     }
