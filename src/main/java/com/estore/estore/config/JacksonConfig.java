@@ -20,6 +20,7 @@ public class JacksonConfig {
         // Настройка для обработки циклических ссылок
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.configure(SerializationFeature.FAIL_ON_SELF_REFERENCES, false);
         
         // Исключаем null значения из JSON
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
