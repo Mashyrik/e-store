@@ -1,10 +1,12 @@
 package com.estore.estore.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_items")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "order"})
 public class OrderItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +21,7 @@ public class OrderItem {
     private Product product;
 
     private Integer quantity;
-    private BigDecimal price; // Цена на момент заказа
+    private BigDecimal price; 
 
     // Конструкторы
     public OrderItem() {}
