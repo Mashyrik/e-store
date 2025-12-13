@@ -42,7 +42,7 @@ public class CategoryController {
     @PostMapping
     @Operation(summary = "Создать категорию", description = "Создание новой категории (только для администраторов)")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<?> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
+    public ResponseEntity<Category> createCategory(@Valid @RequestBody CategoryRequest categoryRequest) {
         try {
             Category category = categoryService.createCategory(categoryRequest);
             return ResponseEntity.ok(category);
@@ -54,7 +54,7 @@ public class CategoryController {
     @PutMapping("/{id}")
     @Operation(summary = "Обновить категорию", description = "Обновление информации о категории (только для администраторов)")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<?> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest categoryRequest) {
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @Valid @RequestBody CategoryRequest categoryRequest) {
         try {
             Category updatedCategory = categoryService.updateCategory(id, categoryRequest);
             return ResponseEntity.ok(updatedCategory);
@@ -66,7 +66,7 @@ public class CategoryController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Удалить категорию", description = "Удаление категории (только для администраторов)")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         try {
             categoryService.deleteCategory(id);
             return ResponseEntity.ok().build();

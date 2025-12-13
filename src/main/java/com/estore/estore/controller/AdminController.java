@@ -61,7 +61,7 @@ public class AdminController {
     @DeleteMapping("/users/{id}")
     @Operation(summary = "Удалить пользователя", description = "Удаление пользователя из системы")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.ok().build();
     }

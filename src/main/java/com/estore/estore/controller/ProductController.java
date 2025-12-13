@@ -34,6 +34,7 @@ public class ProductController {
     }
 
     @GetMapping("/page")
+    @Operation(summary = "Получить товары с пагинацией", description = "Возвращает товары с поддержкой пагинации и сортировки")
     public ResponseEntity<Page<Product>> getProductsPage(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -62,7 +63,7 @@ public class ProductController {
     @PostMapping
     @Operation(summary = "Создать товар", description = "Создание нового товара (только для администраторов)")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductRequest productRequest) {
+    public ResponseEntity<Product> createProduct(@Valid @RequestBody ProductRequest productRequest) {
         try {
             Product product = productService.createProduct(productRequest);
             return ResponseEntity.ok(product);
@@ -74,7 +75,7 @@ public class ProductController {
     @PutMapping("/{id}")
     @Operation(summary = "Обновить товар", description = "Обновление информации о товаре (только для администраторов)")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest productRequest) {
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest productRequest) {
         try {
             Product updatedProduct = productService.updateProduct(id, productRequest);
             return ResponseEntity.ok(updatedProduct);
@@ -86,7 +87,7 @@ public class ProductController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Удалить товар", description = "Удаление товара (только для администраторов)")
     @SecurityRequirement(name = "bearerAuth")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         try {
             productService.deleteProduct(id);
             return ResponseEntity.ok().build();

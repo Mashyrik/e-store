@@ -37,7 +37,7 @@ public class CartController {
 
     @PutMapping("/items/{productId}")
     @Operation(summary = "Обновить количество товара", description = "Изменение количества товара в корзине")
-    public ResponseEntity<?> updateCartItem(
+    public ResponseEntity<CartItemResponse> updateCartItem(
             @PathVariable Long productId,
             @RequestParam Integer quantity) {
         CartItemResponse item = cartService.updateCartItem(productId, quantity);
@@ -49,14 +49,14 @@ public class CartController {
 
     @DeleteMapping("/items/{productId}")
     @Operation(summary = "Удалить товар из корзины", description = "Удаление товара из корзины")
-    public ResponseEntity<?> removeFromCart(@PathVariable Long productId) {
+    public ResponseEntity<Void> removeFromCart(@PathVariable Long productId) {
         cartService.removeFromCart(productId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping
     @Operation(summary = "Очистить корзину", description = "Удаление всех товаров из корзины")
-    public ResponseEntity<?> clearCart() {
+    public ResponseEntity<Void> clearCart() {
         cartService.clearCart();
         return ResponseEntity.noContent().build();
     }

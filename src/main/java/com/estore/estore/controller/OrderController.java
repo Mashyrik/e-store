@@ -40,12 +40,14 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Получить заказ по ID", description = "Возвращает информацию о конкретном заказе")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long id) {
         OrderResponse order = orderService.getOrderById(id);
         return ResponseEntity.ok(order);
     }
 
     @PutMapping("/{id}/cancel")
+    @Operation(summary = "Отменить заказ", description = "Отмена заказа пользователем")
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<OrderResponse> cancelOrder(@PathVariable Long id) {
         OrderResponse order = orderService.cancelOrder(id);

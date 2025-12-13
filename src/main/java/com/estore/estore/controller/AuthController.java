@@ -41,7 +41,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Вход пользователя", description = "Аутентификация пользователя и получение JWT токена")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<JwtResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -67,7 +67,7 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Регистрация пользователя", description = "Создание нового аккаунта пользователя")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<Map<String, String>> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userService.existsByUsername(registerRequest.getUsername())) {
             throw new DuplicateResourceException("Username is already taken");
         }
