@@ -616,7 +616,11 @@ class AdminComponent {
                 this.showNotification(result.message, 'error');
             }
         } catch (error) {
-            this.showNotification('Ошибка сохранения товара', 'error');
+            console.error('Error saving product:', error);
+            const errorMessage = error?.message || 'Ошибка сохранения товара';
+            // Убеждаемся, что сообщение - строка
+            const message = typeof errorMessage === 'string' ? errorMessage : 'Ошибка сохранения товара: ' + JSON.stringify(errorMessage);
+            this.showNotification('Ошибка сохранения товара: ' + message, 'error');
         }
     }
 

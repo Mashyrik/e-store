@@ -364,6 +364,13 @@ class ProductDetailComponent {
     static getProductIcon(categoryName) {
         if (!categoryName) return '🔌';
         
+        // Безопасное преобразование categoryName в строку
+        const categoryStr = typeof categoryName === 'string' 
+            ? categoryName 
+            : (typeof categoryName === 'object' && categoryName !== null && categoryName.name 
+                ? categoryName.name 
+                : String(categoryName || ''));
+        
         const icons = {
             'Смартфоны': '📱',
             'Планшеты': '📱',
@@ -377,7 +384,7 @@ class ProductDetailComponent {
         };
 
         for (const [key, icon] of Object.entries(icons)) {
-            if (categoryName.toLowerCase().includes(key.toLowerCase())) {
+            if (categoryStr.toLowerCase().includes(key.toLowerCase())) {
                 return icon;
             }
         }
@@ -763,8 +770,15 @@ class ProductDetailComponent {
 
     static getCategoryIdByName(categoryName) {
         if (this.categoriesCache) {
+            // Безопасное преобразование categoryName в строку
+            const categoryStr = typeof categoryName === 'string' 
+                ? categoryName 
+                : (typeof categoryName === 'object' && categoryName !== null && categoryName.name 
+                    ? categoryName.name 
+                    : String(categoryName || ''));
+            
             const category = this.categoriesCache.find(cat => 
-                cat.name === categoryName || cat.name.toLowerCase() === categoryName.toLowerCase()
+                cat.name === categoryStr || cat.name.toLowerCase() === categoryStr.toLowerCase()
             );
             if (category) {
                 return category.id;

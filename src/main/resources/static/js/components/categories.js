@@ -46,6 +46,15 @@ class CategoriesComponent {
     }
 
     static getCategoryIcon(categoryName) {
+        if (!categoryName) return '🔌';
+        
+        // Безопасное преобразование categoryName в строку
+        const categoryStr = typeof categoryName === 'string' 
+            ? categoryName 
+            : (typeof categoryName === 'object' && categoryName !== null && categoryName.name 
+                ? categoryName.name 
+                : String(categoryName || ''));
+        
         const icons = {
             'Смартфоны': '📱',
             'Ноутбуки': '💻',
@@ -56,7 +65,7 @@ class CategoriesComponent {
         };
 
         for (const [key, icon] of Object.entries(icons)) {
-            if (categoryName.toLowerCase().includes(key.toLowerCase())) {
+            if (categoryStr.toLowerCase().includes(key.toLowerCase())) {
                 return icon;
             }
         }

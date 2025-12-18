@@ -119,14 +119,26 @@ class AdminService {
             const products = await response.json();
             console.log('Products loaded from API for admin:', products.length);
             
-            return products.map(product => ({
-                id: product.id,
-                name: product.name,
-                price: product.price,
-                category: product.category ? (typeof product.category === 'object' ? product.category.name : product.category) : '',
-                stock: product.stockQuantity || 0,
-                createdAt: product.createdAt || new Date().toISOString()
-            }));
+            return products.map(product => {
+                // Безопасная обработка категории
+                let categoryName = '';
+                if (product.category) {
+                    if (typeof product.category === 'object' && product.category !== null) {
+                        categoryName = product.category.name || '';
+                    } else if (typeof product.category === 'string') {
+                        categoryName = product.category;
+                    }
+                }
+                
+                return {
+                    id: product.id,
+                    name: product.name,
+                    price: product.price,
+                    category: categoryName,
+                    stock: product.stockQuantity || 0,
+                    createdAt: product.createdAt || new Date().toISOString()
+                };
+            });
         } catch (error) {
             console.error('Failed to load products:', error);
             throw error;
@@ -227,9 +239,18 @@ class AdminService {
             }
         } catch (error) {
             console.error('Failed to update product:', error);
+            // Безопасная обработка сообщения об ошибке
+            let errorMessage = 'Ошибка обновления товара';
+            if (error && error.message) {
+                if (typeof error.message === 'string') {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = 'Ошибка обновления товара: ' + JSON.stringify(error.message);
+                }
+            }
             return {
                 success: false,
-                message: error.message || 'Ошибка обновления товара'
+                message: errorMessage
             };
         }
     }
