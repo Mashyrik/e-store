@@ -38,15 +38,29 @@ public class CartService {
     // Получить текущего пользователя из SecurityContext
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated() || 
+            "anonymousUser".equals(authentication.getName())) {
+            throw new ResourceNotFoundException("User not authenticated");
+        }
+        
         String username = authentication.getName();
-        return userRepository.findByUsername(username)
+        System.out.println("=== CART DEBUG: Getting cart for user: " + username + " ===");
+        
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+        
+        System.out.println("=== CART DEBUG: User ID: " + user.getId() + ", Username: " + user.getUsername() + " ===");
+        
+        return user;
     }
 
     // Получить корзину пользователя
     public CartResponse getCart() {
         User user = getCurrentUser();
+        System.out.println("=== CART DEBUG: Fetching cart items for user ID: " + user.getId() + " ===");
         List<CartItem> cartItems = cartItemRepository.findByUser(user);
+        System.out.println("=== CART DEBUG: Found " + cartItems.size() + " items in cart ===");
 
         List<CartItemResponse> items = cartItems.stream()
                 .map(this::convertToResponse)
@@ -66,6 +80,8 @@ public class CartService {
     // Добавить товар в корзину
     public CartItemResponse addToCart(CartItemRequest request) {
         User user = getCurrentUser();
+        System.out.println("=== CART DEBUG: Adding to cart for user ID: " + user.getId() + ", product ID: " + request.getProductId() + " ===");
+        
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + request.getProductId()));
 
@@ -82,13 +98,16 @@ public class CartService {
             // Обновляем количество если товар уже в корзине
             cartItem = existingItem.get();
             cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
+            System.out.println("=== CART DEBUG: Updating existing cart item, new quantity: " + cartItem.getQuantity() + " ===");
         } else {
             // Создаем новый элемент корзины
             cartItem = new CartItem(user, product, request.getQuantity());
+            System.out.println("=== CART DEBUG: Creating new cart item for user ID: " + user.getId() + " ===");
         }
 
-        cartItemRepository.save(cartItem);
-        return convertToResponse(cartItem);
+        CartItem savedItem = cartItemRepository.save(cartItem);
+        System.out.println("=== CART DEBUG: Cart item saved with ID: " + savedItem.getId() + ", user ID: " + savedItem.getUser().getId() + " ===");
+        return convertToResponse(savedItem);
     }
 
     // Обновить количество товара в корзине
