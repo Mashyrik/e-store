@@ -2,20 +2,15 @@ class AdminComponent {
     static async init() {
         console.log('Initializing AdminComponent');
 
-        // Проверяем авторизацию и права админа
         if (!this.isAdmin()) {
             this.redirectToProfile();
             return;
         }
 
-
-        // Загружаем статистику
         await this.loadStats();
 
-        // Настраиваем обработчики событий
         this.setupEventListeners();
 
-        // Загружаем первую вкладку (по умолчанию - панель управления с заказами)
         const defaultTab = new URLSearchParams(window.location.search).get('tab') || 'dashboard';
         await this.loadTab(defaultTab);
     }
@@ -34,13 +29,11 @@ class AdminComponent {
         try {
             const stats = await AdminService.getStats();
 
-            // Обновляем статистику
             document.getElementById('totalUsers').textContent = stats.totalUsers;
             document.getElementById('totalProducts').textContent = stats.totalProducts;
             document.getElementById('todayRevenue').textContent = AdminService.formatPrice(stats.todayRevenue);
             document.getElementById('pendingOrders').textContent = stats.pendingOrders;
 
-            // Обновляем графики
             this.updateAnalytics(stats);
 
         } catch (error) {
@@ -82,7 +75,6 @@ class AdminComponent {
 
     static async loadProducts(forceRefresh = false) {
         try {
-            // Очищаем кэш если требуется принудительное обновление
             if (forceRefresh && ProductsComponent && ProductsComponent.productsCache) {
                 ProductsComponent.productsCache = [];
             }
@@ -144,7 +136,6 @@ class AdminComponent {
         try {
             console.log('Refreshing users...');
             this.showNotification('Обновление пользователей...', 'info');
-            // Принудительно обновляем данные
             const users = await AdminService.getUsers(true);
             console.log('Users refreshed:', users.length);
             this.renderUsersTable(users);
@@ -159,7 +150,6 @@ class AdminComponent {
         console.log('Refreshing orders...');
         const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
         this.showNotification('Обновление заказов...', 'info');
-        // Принудительно обновляем данные
         try {
             await this.loadOrders(statusFilter, true);
             this.showNotification('Заказы обновлены', 'success');
@@ -177,8 +167,6 @@ class AdminComponent {
             this.showNotification('Не удалось загрузить аналитику: ' + error.message, 'error');
         }
     }
-
-    // ============ РЕНДЕРИНГ ТАБЛИЦ ============
 
     static renderProductsTable(products) {
         const container = document.getElementById('productsTable');
@@ -356,7 +344,6 @@ class AdminComponent {
                 </thead>
                 <tbody>
                     ${users.map(user => {
-                        // Определяем статус блокировки
                         const isBlocked = user.blocked === true || user.enabled === false;
                         const isEnabled = user.enabled === true && user.blocked !== true;
                         const statusText = isBlocked ? 'Заблокирован' : 'Активен';
@@ -407,7 +394,6 @@ class AdminComponent {
     }
 
     static renderAnalytics(stats) {
-        // Обновляем график продаж
         const salesChart = document.getElementById('salesChart');
         if (salesChart) {
             salesChart.innerHTML = `
@@ -427,7 +413,6 @@ class AdminComponent {
             `;
         }
 
-        // Обновляем популярные товары
         const popularProducts = document.getElementById('popularProducts');
         if (popularProducts) {
             const maxSales = stats.popularProducts[0]?.sales || 1;
@@ -449,10 +434,7 @@ class AdminComponent {
         }
     }
 
-    // ============ ОБРАБОТЧИКИ СОБЫТИЙ ============
-
     static setupEventListeners() {
-        // Переключение табов
         document.querySelectorAll('.admin-tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 const tabName = tab.dataset.tab;
@@ -460,7 +442,6 @@ class AdminComponent {
             });
         });
 
-        // Кнопки добавления
         const addProductBtn = document.getElementById('addProductBtn');
         if (addProductBtn) {
             addProductBtn.addEventListener('click', () => this.showProductForm());
@@ -471,7 +452,6 @@ class AdminComponent {
             addCategoryBtn.addEventListener('click', () => this.showCategoryForm());
         }
 
-        // Фильтр заказов
         const orderFilter = document.getElementById('orderStatusFilter');
         if (orderFilter) {
             orderFilter.addEventListener('change', async (e) => {
@@ -479,13 +459,11 @@ class AdminComponent {
             });
         }
 
-        // Поиск пользователей
         const userSearch = document.getElementById('userSearch');
         if (userSearch) {
             userSearch.addEventListener('input', (e) => this.searchUsers(e.target.value));
         }
 
-        // Кнопка обновления пользователей
         const refreshUsersBtn = document.getElementById('refreshUsersBtn');
         if (refreshUsersBtn) {
             refreshUsersBtn.addEventListener('click', async () => {
@@ -493,7 +471,6 @@ class AdminComponent {
             });
         }
 
-        // Кнопка обновления заказов
         const refreshOrdersBtn = document.getElementById('refreshOrdersBtn');
         if (refreshOrdersBtn) {
             refreshOrdersBtn.addEventListener('click', async () => {
@@ -501,7 +478,6 @@ class AdminComponent {
             });
         }
 
-        // Кнопка выхода
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.logout());
@@ -509,21 +485,16 @@ class AdminComponent {
     }
 
     static switchTab(tabName) {
-        // Обновляем активные табы
         document.querySelectorAll('.admin-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
         });
 
-        // Показываем соответствующий контент
         document.querySelectorAll('.admin-tab-content').forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}Tab`);
         });
 
-        // Загружаем данные для таба
         this.loadTab(tabName);
     }
-
-    // ============ ФИЛЬТРАЦИЯ И ПОИСК ============
 
     static async filterOrders(status) {
         console.log('Filtering orders by status:', status);
@@ -545,7 +516,6 @@ class AdminComponent {
                 return;
             }
 
-            // Фильтруем пользователей по запросу
             const searchTerm = query.toLowerCase().trim();
             const filteredUsers = users.filter(user => 
                 user.username.toLowerCase().includes(searchTerm) ||
@@ -559,8 +529,6 @@ class AdminComponent {
             this.showNotification('Ошибка поиска пользователей', 'error');
         }
     }
-
-    // ============ ОПЕРАЦИИ С ТОВАРАМИ ============
 
     static async showProductForm(productId = null) {
         const isEdit = productId !== null;
@@ -611,7 +579,6 @@ class AdminComponent {
 
         this.showModal(modalHtml);
 
-        // Заполняем форму если редактирование
         if (isEdit) {
             setTimeout(() => {
                 document.getElementById('productName').value = 'iPhone 15 Pro';
@@ -620,7 +587,6 @@ class AdminComponent {
             }, 100);
         }
 
-        // Обработчик формы
         const form = document.getElementById('productForm');
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -674,8 +640,6 @@ class AdminComponent {
             this.showNotification('Ошибка удаления товара', 'error');
         }
     }
-
-    // ============ ОПЕРАЦИИ С КАТЕГОРИЯМИ ============
 
     static async showCategoryForm(categoryId = null) {
         const isEdit = categoryId !== null;
@@ -765,8 +729,6 @@ class AdminComponent {
         }
     }
 
-    // ============ ОПЕРАЦИИ С ПОЛЬЗОВАТЕЛЯМИ ============
-
     static async toggleUserStatus(userId, block) {
         const action = block ? 'заблокировать' : 'разблокировать';
         if (!confirm(`Вы уверены, что хотите ${action} этого пользователя?`)) return;
@@ -776,7 +738,6 @@ class AdminComponent {
 
             if (result.success) {
                 this.showNotification(result.message, 'success');
-                // Перезагружаем список пользователей
                 await this.loadTab('users');
             } else {
                 this.showNotification(result.message, 'error');
@@ -809,40 +770,31 @@ class AdminComponent {
         }
     }
 
-    // ============ ОПЕРАЦИИ С ЗАКАЗАМИ ============
-
     static async changeOrderStatus(orderId, newStatus) {
         try {
-            // Получаем текущий фильтр статуса
             const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
             
             const result = await AdminService.updateOrderStatus(orderId, newStatus);
 
             if (result.success) {
                 this.showNotification(`Статус заказа #${orderId} обновлен на "${AdminService.getStatusText(newStatus)}"`, 'success');
-                // Перезагружаем заказы для обновления таблицы с сохранением фильтра
                 await this.loadOrders(statusFilter);
             } else {
                 this.showNotification(result.message || 'Ошибка обновления статуса', 'error');
-                // Перезагружаем заказы чтобы вернуть предыдущий статус
                 await this.loadOrders(statusFilter);
             }
         } catch (error) {
             console.error('Error changing order status:', error);
             this.showNotification(`Ошибка обновления статуса заказа: ${error.message}`, 'error');
-            // Перезагружаем заказы
             const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
             await this.loadOrders(statusFilter);
         }
     }
 
     static viewOrder(orderId) {
-        // Можно открыть модальное окно с деталями заказа
         console.log('Viewing order:', orderId);
         this.showNotification(`Просмотр заказа #${orderId}`, 'info');
     }
-
-    // ============ УТИЛИТЫ ============
 
     static showTabLoading(tabName) {
         const container = document.getElementById(`${tabName}Tab`);
@@ -874,15 +826,12 @@ class AdminComponent {
     }
 
     static showModal(html) {
-        // Удаляем существующий модал
         this.closeModal();
 
-        // Создаем новый
         const modal = document.createElement('div');
         modal.innerHTML = html;
         document.body.appendChild(modal.firstElementChild);
 
-        // Показываем с анимацией
         setTimeout(() => {
             const modalElement = document.getElementById('productModal') ||
                 document.getElementById('categoryModal');
@@ -925,12 +874,10 @@ class AdminComponent {
     }
 
     static updateAnalytics(stats) {
-        // Просто вызывает renderAnalytics
         this.renderAnalytics(stats);
     }
 }
 
-// Инициализируем когда DOM загружен
 document.addEventListener('DOMContentLoaded', () => {
     AdminComponent.init();
 });

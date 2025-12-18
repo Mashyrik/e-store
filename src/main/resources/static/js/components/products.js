@@ -1,4 +1,3 @@
-// static/js/components/products.js
 class ProductsComponent {
     static productsCache = [];
     static activeCategory = '';
@@ -10,26 +9,21 @@ class ProductsComponent {
         console.log('Initializing ProductsComponent');
 
         try {
-            // Загружаем товары
             const products = await this.loadProducts();
             this.productsCache = products;
             this.currentPage = 1;
 
-            // Проверяем параметр категории из URL
             const urlParams = new URLSearchParams(window.location.search);
             const categoryParam = urlParams.get('category');
             
             if (categoryParam) {
-                // Применяем фильтр по категории
                 this.activeCategory = decodeURIComponent(categoryParam);
-                // Устанавливаем значение в селект фильтра
                 const categoryFilter = document.getElementById('categoryFilter');
                 if (categoryFilter) {
                     categoryFilter.value = this.activeCategory;
                 }
             }
 
-            // Рендерим товары (с учетом фильтра, если есть)
             const filtered = this.applyFilters();
             this.renderProducts(filtered);
 
@@ -41,7 +35,6 @@ class ProductsComponent {
 
     static async loadProducts() {
         try {
-            // Загружаем товары из API
             const response = await fetch('http://localhost:8080/api/products');
             
             if (!response.ok) {
@@ -51,16 +44,13 @@ class ProductsComponent {
             const products = await response.json();
             console.log('Products loaded from API:', products.length);
             
-            // Преобразуем товары в нужный формат
             return products.map(product => {
-                // Обрабатываем цену (BigDecimal может быть объектом или числом)
                 let price = product.price;
                 if (typeof price === 'object' && price !== null) {
                     price = parseFloat(price) || 0;
                 }
                 price = parseFloat(price) || 0;
                 
-                // Обрабатываем категорию
                 let category = '';
                 if (product.category) {
                     if (typeof product.category === 'object' && product.category.name) {
@@ -103,7 +93,6 @@ class ProductsComponent {
             return;
         }
 
-        // Вычисляем пагинацию
         const totalPages = Math.ceil(products.length / this.itemsPerPage);
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
         const endIndex = startIndex + this.itemsPerPage;
@@ -140,13 +129,9 @@ class ProductsComponent {
 
         container.innerHTML = html;
         
-        // Рендерим пагинацию
         this.renderPagination(totalPages);
         
-        // Добавляем обработчики для кнопок "В корзину"
         this.attachCartHandlers();
-
-        // Добавляем стили для ссылок названий товаров
         const style = document.createElement('style');
         style.textContent = `
             .product-info h3 a {
@@ -165,16 +150,15 @@ class ProductsComponent {
     static attachCartHandlers() {
         const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
         addToCartButtons.forEach(button => {
-            button.addEventListener('click', (e) => {
+            button.addEventListener('click', async (e) => {
                 e.preventDefault();
                 const productId = parseInt(button.getAttribute('data-product-id'));
-                this.addToCart(productId);
+                await this.addToCart(productId);
             });
         });
     }
 
-    static addToCart(productId) {
-        // Находим товар в кэше
+    static async addToCart(productId) {
         const product = this.productsCache.find(p => p.id === productId);
         
         if (!product) {
@@ -182,18 +166,15 @@ class ProductsComponent {
             return;
         }
 
-        // Проверяем наличие товара
         if (product.stockQuantity === 0) {
             this.showNotification('Товар отсутствует на складе', 'error');
             return;
         }
 
-        // Инициализируем корзину, если её нет
         if (!window.cart) {
             window.cart = new SimpleCart();
         }
 
-        // Подготавливаем данные товара для корзины
         const cartProduct = {
             id: product.id,
             name: product.name,
@@ -203,15 +184,14 @@ class ProductsComponent {
             quantity: 1
         };
 
-        // Добавляем товар в корзину
-        window.cart.add(cartProduct);
-
-        // Показываем уведомление
-        this.showNotification(`"${product.name}" добавлен в корзину`, 'success');
-        
-        // Обновляем счетчик корзины
-        if (typeof App !== 'undefined' && App.updateCartCount) {
-            App.updateCartCount();
+        try {
+            await window.cart.add(cartProduct);
+            
+            if (typeof App !== 'undefined' && App.updateCartCount) {
+                await App.updateCartCount();
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
         }
     }
 
@@ -254,13 +234,12 @@ class ProductsComponent {
         this.currentPage = page;
         this.renderProducts(filtered);
         
-        // Прокручиваем страницу вверх
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     static async searchProducts(query) {
         this.activeQuery = query.trim().toLowerCase();
-        this.currentPage = 1; // Сбрасываем на первую страницу при поиске
+        this.currentPage = 1;
         const filtered = this.applyFilters();
         this.renderProducts(filtered);
     }
@@ -292,9 +271,8 @@ class ProductsComponent {
 
     static filterByCategory(category) {
         this.activeCategory = category;
-        this.currentPage = 1; // Сбрасываем на первую страницу при фильтрации
+        this.currentPage = 1;
         
-        // Обновляем URL с параметром категории
         const url = new URL(window.location);
         if (category) {
             url.searchParams.set('category', category);
@@ -310,20 +288,17 @@ class ProductsComponent {
     static resetFilters() {
         this.activeCategory = '';
         this.activeQuery = '';
-        this.currentPage = 1; // Сбрасываем на первую страницу
+        this.currentPage = 1;
         
-        // Очищаем параметры из URL
         const url = new URL(window.location);
         url.searchParams.delete('category');
         window.history.replaceState({}, '', url);
         
-        // Сбрасываем значение в селекте
         const categoryFilter = document.getElementById('categoryFilter');
         if (categoryFilter) {
             categoryFilter.value = '';
         }
         
-        // Сбрасываем значение в поиске
         const searchInput = document.getElementById('searchProducts');
         if (searchInput) {
             searchInput.value = '';
@@ -359,7 +334,6 @@ class ProductsComponent {
     }
 
     static showNotification(message, type = 'info') {
-        // Используем функцию showNotification из глобального скрипта
         if (typeof window.showNotification === 'function') {
             window.showNotification(message, type);
         } else {

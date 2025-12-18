@@ -1,9 +1,7 @@
-// static/js/components/checkout.js
 class CheckoutComponent {
     static async init() {
         console.log('Initializing CheckoutComponent');
 
-        // Проверяем авторизацию
         if (!AuthService.isAuthenticated()) {
             this.showError('Для оформления заказа необходимо войти в систему');
             setTimeout(() => {
@@ -12,16 +10,18 @@ class CheckoutComponent {
             return;
         }
 
-        // Проверяем, что корзина не пуста
+        if (!window.cart) {
+            window.cart = new SimpleCart();
+        }
+        await window.cart.load();
+
         if (!window.cart || window.cart.items.length === 0) {
             this.showEmptyCart();
             return;
         }
 
-        // Загружаем товары из корзины
         this.loadCartItems();
 
-        // Настраиваем обработчик формы
         const form = document.getElementById('checkoutForm');
         if (form) {
             form.addEventListener('submit', (e) => this.handleSubmit(e));
@@ -72,10 +72,7 @@ class CheckoutComponent {
         const submitBtn = document.getElementById('submitOrderBtn');
         const form = document.getElementById('checkoutForm');
 
-        // Очищаем предыдущие ошибки
         this.clearErrors();
-
-        // Собираем данные формы
         const city = document.getElementById('city').value.trim();
         const street = document.getElementById('street').value.trim();
         const house = document.getElementById('house').value.trim();
@@ -83,7 +80,6 @@ class CheckoutComponent {
         const postalCode = document.getElementById('postalCode').value.trim();
         const notes = document.getElementById('notes').value.trim();
 
-        // Валидация
         if (!city || !street || !house) {
             this.showError('Пожалуйста, заполните все обязательные поля');
             if (!city) this.showFieldError('city', 'Город обязателен для заполнения');
@@ -92,7 +88,6 @@ class CheckoutComponent {
             return;
         }
 
-        // Формируем адрес доставки
         let shippingAddress = `${city}, ${street}, д. ${house}`;
         if (apartment) {
             shippingAddress += `, кв. ${apartment}`;
@@ -101,32 +96,25 @@ class CheckoutComponent {
             shippingAddress += `, ${postalCode}`;
         }
 
-        // Подготавливаем данные заказа
         const orderData = {
             shippingAddress: shippingAddress,
             notes: notes || null
         };
 
-        // Отключаем кнопку и показываем загрузку
         submitBtn.disabled = true;
         submitBtn.textContent = 'Оформление...';
 
         try {
-            // Синхронизируем корзину с сервером перед созданием заказа
             await this.syncCartToServer();
 
-            // Отправляем заказ на сервер
             const order = await this.createOrder(orderData);
 
-            // Показываем успешное сообщение
             this.showSuccess('Заказ успешно оформлен!');
 
-            // Очищаем корзину (и локальную, и серверную уже очищена сервером)
             if (window.cart) {
-                window.cart.clear();
+                await window.cart.clear();
             }
 
-            // Перенаправляем на страницу успеха или профиля
             setTimeout(() => {
                 window.location.href = 'profile.html';
             }, 2000);
@@ -140,48 +128,10 @@ class CheckoutComponent {
     }
 
     static async syncCartToServer() {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-            throw new Error('Необходима авторизация');
+        if (window.cart) {
+            await window.cart.load();
         }
-
-        if (!window.cart || window.cart.items.length === 0) {
-            console.log('Корзина пуста, синхронизация не требуется');
-            return;
-        }
-
-        try {
-            // Очищаем серверную корзину перед синхронизацией
-            await fetch('http://localhost:8080/api/cart', {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            // Добавляем все товары из localStorage корзины в серверную корзину
-            const items = window.cart.items;
-            for (const item of items) {
-                await fetch('http://localhost:8080/api/cart/items', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        productId: item.id,
-                        quantity: item.quantity || 1
-                    })
-                });
-            }
-
-            console.log('Корзина синхронизирована с сервером');
-        } catch (error) {
-            console.error('Ошибка синхронизации корзины:', error);
-            // Не бросаем ошибку, продолжаем создание заказа
-            // Если API недоступен, сервер может создать заказ из пустой корзины
-        }
+        console.log('Корзина уже на сервере, синхронизация не требуется');
     }
 
     static async createOrder(orderData) {

@@ -1,19 +1,28 @@
-// static/js/components/cart-page.js
 class CartPageComponent {
+  
     static async init() {
+       
         console.log('Initializing CartPageComponent');
 
+        
         if (!window.cart) {
+           
             window.cart = new SimpleCart();
         }
 
+        await window.cart.load();
+       
         this.renderCart();
     }
 
+    
     static renderCart() {
+        
         const container = document.getElementById('cartContainer');
+        
         if (!container) return;
 
+       
         if (!window.cart || window.cart.items.length === 0) {
             container.innerHTML = `
                 <div class="empty-cart" style="grid-column: 1/-1;">
@@ -27,11 +36,14 @@ class CartPageComponent {
         }
 
         const items = window.cart.items;
-        let itemsTotal = 0;
+        let itemsTotal = window.cart.totalAmount || 0;
+        
+        if (itemsTotal === 0 && items.length > 0) {
+            itemsTotal = items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+        }
 
         const itemsHtml = items.map(item => {
             const itemTotal = item.price * (item.quantity || 1);
-            itemsTotal += itemTotal;
 
             return `
                 <div class="cart-item" data-id="${item.id}">
@@ -94,49 +106,73 @@ class CartPageComponent {
         `;
     }
 
-    static increaseQuantity(productId) {
+    static async increaseQuantity(productId) {
         const item = window.cart.items.find(i => i.id === productId);
         if (item) {
-            item.quantity = (item.quantity || 1) + 1;
-            window.cart.save();
-            this.renderCart();
-        }
-    }
-
-    static decreaseQuantity(productId) {
-        const item = window.cart.items.find(i => i.id === productId);
-        if (item) {
-            if (item.quantity > 1) {
-                item.quantity -= 1;
-                window.cart.save();
+            try {
+                const newQuantity = (item.quantity || 1) + 1;
+                await window.cart.updateQuantity(productId, newQuantity);
                 this.renderCart();
-            } else {
-                this.removeItem(productId);
+            } catch (error) {
+                console.error('Error increasing quantity:', error);
+                if (typeof App !== 'undefined' && App.showNotification) {
+                    App.showNotification('Ошибка при обновлении количества товара', 'error');
+                }
             }
         }
     }
 
-    static updateQuantity(productId, quantity) {
+    static async decreaseQuantity(productId) {
+        const item = window.cart.items.find(i => i.id === productId);
+        if (item) {
+            try {
+                if (item.quantity > 1) {
+                    const newQuantity = item.quantity - 1;
+                    await window.cart.updateQuantity(productId, newQuantity);
+                    this.renderCart();
+                } else {
+                    await this.removeItem(productId);
+                }
+            } catch (error) {
+                console.error('Error decreasing quantity:', error);
+                if (typeof App !== 'undefined' && App.showNotification) {
+                    App.showNotification('Ошибка при обновлении количества товара', 'error');
+                }
+            }
+        }
+    }
+
+    static async updateQuantity(productId, quantity) {
         const qty = parseInt(quantity);
         if (qty > 0) {
-            const item = window.cart.items.find(i => i.id === productId);
-            if (item) {
-                item.quantity = qty;
-                window.cart.save();
+            try {
+                await window.cart.updateQuantity(productId, qty);
                 this.renderCart();
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+                if (typeof App !== 'undefined' && App.showNotification) {
+                    App.showNotification('Ошибка при обновлении количества товара', 'error');
+                }
             }
         } else {
-            this.removeItem(productId);
+            await this.removeItem(productId);
         }
     }
 
-    static removeItem(productId) {
+    static async removeItem(productId) {
         if (confirm('Удалить товар из корзины?')) {
-            window.cart.remove(productId);
-            this.renderCart();
-            
-            if (typeof App !== 'undefined' && App.showNotification) {
-                App.showNotification('Товар удален из корзины', 'info');
+            try {
+                await window.cart.remove(productId);
+                this.renderCart();
+                
+                if (typeof App !== 'undefined' && App.showNotification) {
+                    App.showNotification('Товар удален из корзины', 'info');
+                }
+            } catch (error) {
+                console.error('Error removing item:', error);
+                if (typeof App !== 'undefined' && App.showNotification) {
+                    App.showNotification('Ошибка при удалении товара', 'error');
+                }
             }
         }
     }
@@ -170,4 +206,3 @@ class CartPageComponent {
 }
 
 window.CartPageComponent = CartPageComponent;
-

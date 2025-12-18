@@ -3,23 +3,24 @@ class ProfileService {
         try {
             const user = JSON.parse(localStorage.getItem('user')) || {};
             
-            // Если заказы не переданы, загружаем их
             if (!orders) {
                 orders = await this.getOrders();
             }
             
-            // Подсчитываем статистику из реальных заказов
             const totalOrders = orders.length;
             const totalSpent = orders.reduce((sum, order) => {
                 return sum + (parseFloat(order.totalAmount) || 0);
             }, 0);
 
-            // Безопасное получение cartItems
             let cartItems = 0;
             try {
-                const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-                cartItems = Array.isArray(cart) ? cart.reduce((sum, item) => sum + (item.quantity || 1), 0) : 0;
+                if (typeof CartService !== 'undefined') {
+                    cartItems = await CartService.getCartCount();
+                } else if (window.cart) {
+                    cartItems = window.cart.getCount();
+                }
             } catch (e) {
+                console.error('Error getting cart count:', e);
                 cartItems = 0;
             }
 
@@ -47,7 +48,6 @@ class ProfileService {
                 return [];
             }
 
-            // Добавляем параметр для предотвращения кеширования
             const url = 'http://localhost:8080/api/orders' + (forceRefresh ? '?t=' + Date.now() : '');
             
             const response = await fetch(url, {
@@ -131,7 +131,6 @@ class ProfileService {
 
     static formatPrice(price) {
         if (!price) return '0 BYN';
-        // Если price - это объект BigDecimal, преобразуем в число
         const numPrice = typeof price === 'object' ? parseFloat(price) : parseFloat(price);
         return new Intl.NumberFormat('ru-RU', {
             minimumFractionDigits: 2,

@@ -2,19 +2,15 @@ class ProfileComponent {
     static async init() {
         console.log('Initializing ProfileComponent');
 
-        // Проверяем авторизацию
         if (!this.isAuthenticated()) {
             this.redirectToLogin();
             return;
         }
 
-        // Загружаем данные профиля
         await this.loadProfile();
 
-        // Настраиваем обработчики событий
         this.setupEventListeners();
 
-        // Показываем админские ссылки если пользователь админ
         this.checkAdminAccess();
     }
 
@@ -30,25 +26,19 @@ class ProfileComponent {
 
     static async loadProfile(forceRefresh = false) {
         try {
-            // Показываем загрузку
             this.showLoading();
 
-            // Загружаем заказы (обновляем всегда)
             let orders = [];
             try {
                 orders = await ProfileService.getOrders(forceRefresh);
             } catch (orderError) {
                 console.warn('Failed to load orders, continuing with empty list:', orderError);
-                // Продолжаем работу даже если заказы не загрузились
             }
 
-            // Загружаем данные профиля (используем актуальные заказы для статистики)
             const profile = await ProfileService.getProfile(orders);
 
-            // Обновляем UI
             this.updateProfileUI(profile);
             
-            // Обновляем заказы только для обычных пользователей (не админов)
             const user = JSON.parse(localStorage.getItem('user') || '{}');
             if (user.role !== 'ROLE_ADMIN') {
                 this.updateOrdersUI(orders);
@@ -64,7 +54,6 @@ class ProfileComponent {
     }
 
     static updateProfileUI(profile) {
-        // Обновляем информацию пользователя
         document.getElementById('userName').textContent = profile.username;
         document.getElementById('userEmail').textContent = profile.email;
         const loginEl = document.getElementById('userLogin');
@@ -76,7 +65,6 @@ class ProfileComponent {
             emailMeta.textContent = profile.email;
         }
 
-        // Обновляем роль
         const roleElement = document.getElementById('userRole');
         roleElement.textContent = profile.role === 'ROLE_ADMIN' ? 'Администратор' : 'Пользователь';
         roleElement.className = 'role-badge ' + (profile.role === 'ROLE_ADMIN' ? 'admin' : 'user');
@@ -86,12 +74,10 @@ class ProfileComponent {
             roleBadge.className = roleElement.className;
         }
 
-        // Обновляем статистику
         document.getElementById('totalOrders').textContent = profile.totalOrders;
         document.getElementById('totalSpent').textContent = ProfileService.formatPrice(profile.totalSpent);
         document.getElementById('cartItems').textContent = profile.cartItems;
 
-        // Заполняем поля формы
         document.getElementById('usernameInput').value = profile.username;
         document.getElementById('emailInput').value = profile.email;
     }
@@ -183,7 +169,6 @@ class ProfileComponent {
             `).join('')
             : '<p>Товары не найдены</p>';
 
-        // Получаем текст статуса для отображения
         const getStatusText = (status) => {
             const statusMap = {
                 'PENDING': 'Ожидание',
@@ -241,12 +226,10 @@ class ProfileComponent {
         const adminLinks = document.getElementById('adminLinks');
 
         if (user.role === 'ROLE_ADMIN') {
-            // Показываем админские ссылки
             if (adminLinks) {
                 adminLinks.style.display = 'block';
             }
 
-            // Скрываем вкладки "Обзор" и "Мои заказы" для админа
             const overviewLink = document.querySelector('[data-tab="overview"]');
             const ordersLink = document.querySelector('[data-tab="orders"]');
             const statsLink = document.querySelector('[data-tab="stats"]');
@@ -261,7 +244,6 @@ class ProfileComponent {
                 statsLink.style.display = 'none';
             }
 
-            // Скрываем содержимое вкладок
             const overviewTab = document.getElementById('overviewTab');
             const ordersTab = document.getElementById('ordersTab');
 
@@ -272,7 +254,6 @@ class ProfileComponent {
                 ordersTab.style.display = 'none';
             }
 
-            // Переключаемся на вкладку "Настройки" по умолчанию для админа
             const settingsLink = document.querySelector('[data-tab="settings"]');
             if (settingsLink) {
                 settingsLink.classList.add('active');
@@ -282,7 +263,6 @@ class ProfileComponent {
                 }
             }
 
-            // Убираем активность с других вкладок
             if (overviewTab) {
                 overviewTab.classList.remove('active');
             }
@@ -293,7 +273,6 @@ class ProfileComponent {
     }
 
     static setupEventListeners() {
-        // Навигация по табам
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -301,19 +280,16 @@ class ProfileComponent {
             });
         });
 
-        // Кнопка сохранения настроек
         const saveBtn = document.getElementById('saveSettingsBtn');
         if (saveBtn) {
             saveBtn.addEventListener('click', () => this.saveSettings());
         }
 
-        // Кнопка выхода
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', () => this.logout());
         }
 
-        // Обработчики для админских вкладок
         const orderStatusFilter = document.getElementById('orderStatusFilter');
         if (orderStatusFilter) {
             orderStatusFilter.addEventListener('change', () => this.loadAdminOrders());
@@ -322,7 +298,6 @@ class ProfileComponent {
         const userSearch = document.getElementById('userSearch');
         if (userSearch) {
             userSearch.addEventListener('input', (e) => {
-                // Простая фильтрация по имени или email
                 const searchTerm = e.target.value.toLowerCase();
                 const container = document.getElementById('usersList');
                 if (container) {
@@ -337,17 +312,14 @@ class ProfileComponent {
     }
 
     static switchTab(tabName) {
-        // Обновляем активные ссылки
         document.querySelectorAll('.nav-link').forEach(link => {
             link.classList.toggle('active', link.dataset.tab === tabName);
         });
 
-        // Показываем соответствующий контент
         document.querySelectorAll('.tab-content').forEach(content => {
             content.classList.toggle('active', content.id === `${tabName}Tab`);
         });
 
-        // Загружаем данные для админских вкладок
         if (tabName === 'admin') {
             this.loadAdminOrders();
         } else if (tabName === 'users') {
@@ -362,7 +334,6 @@ class ProfileComponent {
         try {
             container.innerHTML = '<p>Загрузка заказов...</p>';
             
-            // Проверяем, доступен ли AdminService
             if (typeof AdminService === 'undefined') {
                 container.innerHTML = '<p style="color: red;">AdminService не загружен. Убедитесь, что admin.service.js подключен.</p>';
                 return;
@@ -376,7 +347,6 @@ class ProfileComponent {
                 return;
             }
 
-            // Используем метод создания карточки заказа для админа с возможностью изменения статуса
             const html = orders.map(order => this.createAdminOrderCard(order)).join('');
             container.innerHTML = html;
         } catch (error) {
@@ -392,7 +362,6 @@ class ProfileComponent {
         try {
             container.innerHTML = '<p>Загрузка пользователей...</p>';
             
-            // Проверяем, доступен ли AdminService
             if (typeof AdminService === 'undefined') {
                 container.innerHTML = '<p style="color: red;">AdminService не загружен. Убедитесь, что admin.service.js подключен.</p>';
                 return;
@@ -405,7 +374,6 @@ class ProfileComponent {
                 return;
             }
 
-            // Создаем таблицу пользователей
             const html = `
                 <div style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
@@ -449,33 +417,27 @@ class ProfileComponent {
 
     static async changeOrderStatus(orderId, newStatus) {
         try {
-            // Проверяем, доступен ли AdminService
             if (typeof AdminService === 'undefined') {
                 this.showNotification('AdminService не загружен', 'error');
                 return;
             }
 
-            // Получаем текущий фильтр статуса
             const statusFilter = document.getElementById('orderStatusFilter')?.value || 'all';
             
             const result = await AdminService.updateOrderStatus(orderId, newStatus);
 
             if (result.success) {
-                // Получаем текст статуса для уведомления
                 const statusText = ProfileService.getStatusText(newStatus);
                 this.showNotification(`Статус заказа #${orderId} обновлен на "${statusText}"`, 'success');
                 
-                // Перезагружаем заказы для обновления списка с сохранением фильтра
                 await this.loadAdminOrders();
             } else {
                 this.showNotification(result.message || 'Ошибка обновления статуса', 'error');
-                // Перезагружаем заказы чтобы вернуть предыдущий статус
                 await this.loadAdminOrders();
             }
         } catch (error) {
             console.error('Error changing order status:', error);
             this.showNotification(`Ошибка обновления статуса заказа: ${error.message}`, 'error');
-            // Перезагружаем заказы
             await this.loadAdminOrders();
         }
     }
@@ -489,14 +451,12 @@ class ProfileComponent {
             return;
         }
 
-        // Валидация email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             this.showNotification('Введите корректный email адрес', 'error');
             return;
         }
 
-        // Валидация username
         if (username.length < 3 || username.length > 50) {
             this.showNotification('Имя пользователя должно быть от 3 до 50 символов', 'error');
             return;
@@ -506,7 +466,6 @@ class ProfileComponent {
             const result = await ProfileService.updateProfile({ username, email });
 
             if (result.success) {
-                // Обновляем данные в localStorage с данными из ответа сервера
                 const user = JSON.parse(localStorage.getItem('user')) || {};
                 if (result.profile) {
                     user.username = result.profile.username;
@@ -517,15 +476,12 @@ class ProfileComponent {
                 }
                 localStorage.setItem('user', JSON.stringify(user));
 
-                // Обновляем UI
                 document.getElementById('userName').textContent = user.username;
                 document.getElementById('userEmail').textContent = user.email;
                 
-                // Обновляем поля формы
                 document.getElementById('usernameInput').value = user.username;
                 document.getElementById('emailInput').value = user.email;
 
-                // Обновляем статистику из ответа сервера, если она есть
                 if (result.profile && typeof result.profile.totalOrders !== 'undefined') {
                     const totalOrdersEl = document.getElementById('totalOrders');
                     if (totalOrdersEl) {
@@ -600,7 +556,6 @@ class ProfileComponent {
 
         document.body.appendChild(notification);
 
-        // Удаляем через 3 секунды
         setTimeout(() => {
             notification.style.animation = 'slideOut 0.3s ease-in';
             setTimeout(() => {
@@ -612,12 +567,10 @@ class ProfileComponent {
     }
 }
 
-// Инициализируем когда DOM загружен
 document.addEventListener('DOMContentLoaded', () => {
     ProfileComponent.init();
 });
 
-// Перезагружаем заказы при фокусе на окне (если пользователь вернулся с другой страницы)
 window.addEventListener('focus', () => {
     if (ProfileComponent && document.getElementById('ordersList')) {
         ProfileComponent.loadProfile(true);

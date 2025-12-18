@@ -1,4 +1,3 @@
-// js/utils/storage.js
 class Storage {
     static set(key, value) {
         try {
@@ -28,7 +27,6 @@ class Storage {
         localStorage.clear();
     }
     
-    // Специализированные методы для нашего приложения
     static getToken() {
         return localStorage.getItem('token');
     }

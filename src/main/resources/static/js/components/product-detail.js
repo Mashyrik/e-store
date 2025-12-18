@@ -1,4 +1,3 @@
-// static/js/components/product-detail.js
 class ProductDetailComponent {
     static currentProduct = null;
     static quantity = 1;
@@ -6,17 +5,13 @@ class ProductDetailComponent {
     static async init() {
         console.log('Initializing ProductDetailComponent');
 
-        // Проверяем, является ли пользователь админом
         this.isAdmin = this.checkIsAdmin();
 
-        // Получаем ID товара из URL
         const urlParams = new URLSearchParams(window.location.search);
         const productIdParam = urlParams.get('id');
 
-        // Настраиваем обработчики
         this.setupEventListeners();
 
-        // Если нет ID, значит создание нового товара (только для админа)
         if (!productIdParam) {
             if (this.isAdmin) {
                 await this.initNewProduct();
@@ -26,7 +21,6 @@ class ProductDetailComponent {
             return;
         }
 
-        // Преобразуем ID в число
         const productId = parseInt(productIdParam);
         if (isNaN(productId)) {
             console.error('Некорректный ID товара:', productIdParam);
@@ -34,7 +28,6 @@ class ProductDetailComponent {
             return;
         }
 
-        // Загружаем товар
         await this.loadProduct(productId);
     }
 
@@ -48,14 +41,11 @@ class ProductDetailComponent {
     }
 
     static async initNewProduct() {
-        // Режим создания нового товара
         this.isEditMode = true;
         this.isNewProduct = true;
         
-        // Загружаем категории для выбора
         await this.loadCategories();
         
-        // Скрываем элементы просмотра
         const viewMode = document.getElementById('viewMode');
         const viewDetails = document.getElementById('viewDetails');
         const viewDescription = document.getElementById('viewDescription');
@@ -68,7 +58,6 @@ class ProductDetailComponent {
         if (stockStatus) stockStatus.style.display = 'none';
         if (quantitySelector) quantitySelector.style.display = 'none';
         
-        // Показываем элементы редактирования
         const editMode = document.getElementById('editMode');
         const editDetails = document.getElementById('editDetails');
         const editDescription = document.getElementById('editDescription');
@@ -77,13 +66,11 @@ class ProductDetailComponent {
         if (editDetails) editDetails.style.display = 'block';
         if (editDescription) editDescription.style.display = 'block';
         
-        // Показываем кнопки админа
         const adminActions = document.getElementById('adminActions');
         if (adminActions) adminActions.style.display = 'block';
         const userActions = document.getElementById('userActions');
         if (userActions) userActions.style.display = 'none';
         
-        // Показываем кнопку сохранения, скрываем кнопку редактирования
         const saveBtn = document.getElementById('saveProductBtn');
         const cancelBtn = document.getElementById('cancelEditBtn');
         const editBtn = document.getElementById('editProductBtn');
@@ -92,12 +79,10 @@ class ProductDetailComponent {
         if (saveBtn) saveBtn.style.display = 'block';
         if (cancelBtn) cancelBtn.style.display = 'block';
         if (editBtn) editBtn.style.display = 'none';
-        if (createNewBtn) createNewBtn.style.display = 'none'; // Скрываем кнопку создания при создании нового
+        if (createNewBtn) createNewBtn.style.display = 'none';
         
-        // Обновляем заголовок страницы
         document.title = 'Создание нового товара - E-Store';
         
-        // Очищаем поля
         this.clearEditFields();
     }
 
@@ -140,10 +125,9 @@ class ProductDetailComponent {
         }
 
         if (addToCartBtn) {
-            addToCartBtn.addEventListener('click', () => this.addToCart());
+            addToCartBtn.addEventListener('click', async () => await this.addToCart());
         }
 
-        // Кнопки для админа
         if (editProductBtn) {
             editProductBtn.addEventListener('click', () => this.enableEditMode());
         }
@@ -167,10 +151,8 @@ class ProductDetailComponent {
         try {
             console.log('Загрузка товара с ID:', productId);
             
-            // Пытаемся загрузить через API
             let product = await this.loadProductFromAPI(productId);
 
-            // Если не получилось, загружаем из локального кэша
             if (!product) {
                 console.log('Товар не найден в API, пытаемся загрузить из кэша...');
                 product = await this.loadProductFromCache(productId);
@@ -208,7 +190,6 @@ class ProductDetailComponent {
             const product = await response.json();
             console.log('Product loaded from API:', product);
             
-            // Преобразуем данные в нужный формат (как в ProductsComponent.loadProducts)
             return this.normalizeProductData(product);
 
         } catch (error) {
@@ -218,14 +199,12 @@ class ProductDetailComponent {
     }
 
     static normalizeProductData(product) {
-        // Обрабатываем цену (BigDecimal может быть объектом или числом)
         let price = product.price;
         if (typeof price === 'object' && price !== null) {
             price = parseFloat(price) || 0;
         }
         price = parseFloat(price) || 0;
         
-        // Обрабатываем категорию
         let category = '';
         if (product.category) {
             if (typeof product.category === 'object' && product.category.name) {
@@ -248,14 +227,11 @@ class ProductDetailComponent {
 
     static async loadProductFromCache(productId) {
         try {
-            // Проверяем, доступен ли ProductsComponent
             if (typeof ProductsComponent !== 'undefined' && ProductsComponent.loadProducts) {
-                // Загружаем все товары и ищем нужный
                 const allProducts = await ProductsComponent.loadProducts();
                 const product = allProducts.find(p => p.id === parseInt(productId));
                 return product || null;
             } else {
-                // Если ProductsComponent недоступен, загружаем напрямую из API
                 console.log('ProductsComponent недоступен, загружаем все товары напрямую');
                 const response = await fetch('http://localhost:8080/api/products');
                 if (response.ok) {
@@ -274,10 +250,8 @@ class ProductDetailComponent {
     }
 
     static renderProduct(product) {
-        // Обновляем заголовок страницы
         document.title = `${product.name} - E-Store`;
 
-        // Основная информация
         const nameEl = document.getElementById('productName');
         if (nameEl) nameEl.textContent = product.name;
 
@@ -307,13 +281,11 @@ class ProductDetailComponent {
             descriptionEl.textContent = product.description || 'Описание товара отсутствует.';
         }
 
-        // Иконка товара
         const iconEl = document.getElementById('productIcon');
         if (iconEl) {
             iconEl.textContent = this.getProductIcon(product.category);
         }
 
-        // Статус наличия
         const stockStatusEl = document.getElementById('stockStatus');
         if (stockStatusEl) {
             if (product.stockQuantity > 0) {
@@ -325,7 +297,6 @@ class ProductDetailComponent {
             }
         }
 
-            // Кнопка добавления в корзину
             const addToCartBtn = document.getElementById('addToCartBtn');
             if (addToCartBtn) {
                 if (product.stockQuantity === 0) {
@@ -337,20 +308,17 @@ class ProductDetailComponent {
                 }
             }
 
-            // Максимальное количество
             const quantityInput = document.getElementById('quantityInput');
             if (quantityInput && product.stockQuantity > 0) {
                 quantityInput.max = product.stockQuantity;
             }
 
-            // Показываем кнопки админа, если пользователь - админ
             if (this.isAdmin) {
                 const adminActions = document.getElementById('adminActions');
                 const userActions = document.getElementById('userActions');
                 if (adminActions) adminActions.style.display = 'block';
                 if (userActions) userActions.style.display = 'none';
                 
-                // Скрываем кнопку "Создать новый товар" при редактировании существующего товара
                 const createNewBtn = document.getElementById('createNewProductBtn');
                 if (createNewBtn) {
                     createNewBtn.style.display = 'none';
@@ -358,7 +326,7 @@ class ProductDetailComponent {
             }
         }
 
-    static addToCart() {
+    static async addToCart() {
         if (!this.currentProduct) {
             this.showNotification('Товар не загружен', 'error');
             return;
@@ -369,12 +337,10 @@ class ProductDetailComponent {
             return;
         }
 
-        // Инициализируем корзину
         if (!window.cart) {
             window.cart = new SimpleCart();
         }
 
-        // Подготавливаем данные товара
         const cartProduct = {
             id: this.currentProduct.id,
             name: this.currentProduct.name,
@@ -384,15 +350,14 @@ class ProductDetailComponent {
             quantity: this.quantity
         };
 
-        // Добавляем в корзину
-        window.cart.add(cartProduct);
+        try {
+            await window.cart.add(cartProduct);
 
-        // Показываем уведомление
-        this.showNotification(`"${this.currentProduct.name}" добавлен в корзину (${this.quantity} шт.)`, 'success');
-
-        // Обновляем счетчик корзины
-        if (typeof App !== 'undefined' && App.updateCartCount) {
-            App.updateCartCount();
+            if (typeof App !== 'undefined' && App.updateCartCount) {
+                await App.updateCartCount();
+            }
+        } catch (error) {
+            console.error('Error adding to cart:', error);
         }
     }
 
@@ -447,22 +412,17 @@ class ProductDetailComponent {
         }
     }
 
-    // ============ РЕДАКТИРОВАНИЕ ТОВАРА (для админа) ============
-
     static async enableEditMode() {
         if (!this.isAdmin) return;
 
         this.isEditMode = true;
         
-        // Загружаем категории
         await this.loadCategories();
 
-        // Заполняем поля редактирования только если товар существует
         if (this.currentProduct && !this.isNewProduct) {
             this.fillEditFields(this.currentProduct);
         }
 
-        // Скрываем режим просмотра, показываем режим редактирования
         const viewMode = document.getElementById('viewMode');
         const viewDetails = document.getElementById('viewDetails');
         const viewDescription = document.getElementById('viewDescription');
@@ -485,19 +445,16 @@ class ProductDetailComponent {
         if (saveBtn) saveBtn.style.display = 'block';
         if (cancelBtn) cancelBtn.style.display = 'block';
         
-        // Скрываем кнопку "Создать новый товар" при редактировании существующего товара
         const createNewBtn = document.getElementById('createNewProductBtn');
         if (createNewBtn && !this.isNewProduct) {
             createNewBtn.style.display = 'none';
         }
         
-        // Скрываем элементы, не нужные при редактировании
         if (stockStatus) stockStatus.style.display = 'none';
         if (quantitySelector) quantitySelector.style.display = 'none';
     }
 
     static disableEditMode() {
-        // Если это новый товар, переходим на страницу товаров
         if (this.isNewProduct) {
             window.location.href = 'products.html';
             return;
@@ -506,7 +463,6 @@ class ProductDetailComponent {
         this.isEditMode = false;
         this.isNewProduct = false;
 
-        // Показываем режим просмотра, скрываем режим редактирования
         const viewMode = document.getElementById('viewMode');
         const viewDetails = document.getElementById('viewDetails');
         const viewDescription = document.getElementById('viewDescription');
@@ -529,13 +485,11 @@ class ProductDetailComponent {
         if (editBtn) editBtn.style.display = 'block';
         if (saveBtn) saveBtn.style.display = 'none';
         if (cancelBtn) cancelBtn.style.display = 'none';
-        if (createNewBtn) createNewBtn.style.display = 'block'; // Показываем кнопку создания обратно
+        if (createNewBtn) createNewBtn.style.display = 'block';
         
-        // Показываем элементы просмотра обратно
         if (stockStatus) stockStatus.style.display = 'block';
         if (quantitySelector) quantitySelector.style.display = 'flex';
 
-        // Если это не новый товар, перезагружаем данные
         if (this.currentProduct && !this.isNewProduct) {
             this.renderProduct(this.currentProduct);
         }
@@ -555,21 +509,17 @@ class ProductDetailComponent {
         if (stockInput) stockInput.value = product.stockQuantity || 0;
         if (descriptionTextarea) descriptionTextarea.value = product.description || '';
         
-        // Устанавливаем категорию в селекте
-        // Если категория - объект, берем ID, иначе ищем по названию
         let categoryId = null;
         if (product.category) {
             if (typeof product.category === 'object' && product.category.id) {
                 categoryId = product.category.id;
             } else if (typeof product.category === 'string') {
-                // Ищем категорию по названию
                 categoryId = this.getCategoryIdByName(product.category);
             } else {
                 categoryId = product.category;
             }
         }
         
-        // Устанавливаем категорию только если селект существует и категория найдена
         if (categorySelect && categoryId) {
             categorySelect.value = categoryId;
         }
@@ -593,7 +543,6 @@ class ProductDetailComponent {
 
     static async loadCategories() {
         try {
-            // Загружаем категории через API
             const response = await fetch('http://localhost:8080/api/categories');
             
             if (!response.ok) {
@@ -601,24 +550,20 @@ class ProductDetailComponent {
             }
             
             const categories = await response.json();
-            // Сохраняем в кэш
             this.categoriesCache = categories;
 
-            // Заполняем селект категорий (сохраняем ID в data-атрибуте)
             const categorySelect = document.getElementById('editProductCategoryDetail');
             
             const fillSelect = (select) => {
                 if (!select) return;
-                // Очищаем опции кроме первой
                 while (select.options.length > 1) {
                     select.remove(1);
                 }
-                // Добавляем категории с сохранением ID
                 categories.forEach(cat => {
                     const option = document.createElement('option');
-                    option.value = cat.id; // Используем ID как значение
+                    option.value = cat.id;
                     option.textContent = cat.name;
-                    option.dataset.categoryId = cat.id; // Сохраняем ID в data-атрибуте
+                    option.dataset.categoryId = cat.id;
                     select.appendChild(option);
                 });
             };
@@ -633,7 +578,6 @@ class ProductDetailComponent {
     static async saveProduct() {
         if (!this.isAdmin) return;
 
-        // Собираем данные из полей редактирования
         const nameInput = document.getElementById('editProductName');
         const priceInput = document.getElementById('editProductPrice');
         const modelInput = document.getElementById('editProductModel');
@@ -641,7 +585,6 @@ class ProductDetailComponent {
         const descriptionTextarea = document.getElementById('editProductDescription');
         const categorySelect = document.getElementById('editProductCategoryDetail');
 
-        // Получаем categoryId из селекта (теперь там хранится ID, а не название)
         const categoryId = categorySelect ? parseInt(categorySelect.value) : null;
         
         const productData = {
@@ -653,7 +596,6 @@ class ProductDetailComponent {
             categoryId: categoryId
         };
 
-        // Валидация
         if (!productData.name || !productData.model) {
             this.showNotification('Заполните название и модель товара', 'error');
             return;
@@ -679,38 +621,31 @@ class ProductDetailComponent {
 
             let result;
             if (this.isNewProduct) {
-                // Создание нового товара
                 result = await this.createProduct(productData);
             } else {
-                // Обновление существующего товара
                 result = await this.updateProduct(productData);
             }
 
             if (result.success) {
                 this.showNotification(result.message, 'success');
                 
-                // Очищаем кэш товаров, чтобы при следующей загрузке получить актуальные данные
                 if (typeof ProductsComponent !== 'undefined' && ProductsComponent.productsCache) {
                     ProductsComponent.productsCache = [];
                 }
                 
-                // Устанавливаем флаг для обновления товаров при возврате на страницу каталога
                 sessionStorage.setItem('refreshProducts', 'true');
                 
-                // Если это новый товар, переходим на страницу товара
                 if (this.isNewProduct && result.product && result.product.id) {
                     setTimeout(() => {
                         window.location.href = `product.html?id=${result.product.id}`;
                     }, 1000);
                 } else {
-                    // Обновляем данные товара и выходим из режима редактирования
                     if (result.product) {
                         this.currentProduct = result.product;
                     }
                     this.isNewProduct = false;
                     this.disableEditMode();
                     
-                    // Устанавливаем флаг для обновления товаров при возврате на страницу каталога
                     sessionStorage.setItem('refreshProducts', 'true');
                 }
             } else {
@@ -729,7 +664,6 @@ class ProductDetailComponent {
                 throw new Error('Необходима авторизация');
             }
 
-            // Пробуем отправить на API
             try {
                 const response = await fetch('http://localhost:8080/api/products', {
                     method: 'POST',
@@ -782,11 +716,7 @@ class ProductDetailComponent {
                 throw new Error('Необходима авторизация');
             }
 
-            // Пробуем отправить на API
-            // Примечание: контроллер принимает Product, но лучше отправлять ProductRequest формат
-            // и надеяться, что Spring сможет десериализовать categoryId
             try {
-                // Формируем данные в формате ProductRequest (как ожидает сервис)
                 const requestData = {
                     name: productData.name,
                     description: productData.description || '',
@@ -807,7 +737,6 @@ class ProductDetailComponent {
 
                 if (response.ok) {
                     const product = await response.json();
-                    // Обновляем текущий товар
                     this.currentProduct = { ...this.currentProduct, ...product };
                     return {
                         success: true,
@@ -833,7 +762,6 @@ class ProductDetailComponent {
 
 
     static getCategoryIdByName(categoryName) {
-        // Ищем категорию в кэше или используем маппинг
         if (this.categoriesCache) {
             const category = this.categoriesCache.find(cat => 
                 cat.name === categoryName || cat.name.toLowerCase() === categoryName.toLowerCase()
@@ -843,7 +771,6 @@ class ProductDetailComponent {
             }
         }
         
-        // Фоллбэк на статический маппинг
         const categoryMap = {
             'Смартфоны': 1,
             'Ноутбуки': 2,

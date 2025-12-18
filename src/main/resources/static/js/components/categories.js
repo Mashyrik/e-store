@@ -1,4 +1,3 @@
-// static/js/components/categories.js
 class CategoriesComponent {
     static async init() {
         console.log('Initializing CategoriesComponent');
@@ -43,7 +42,6 @@ class CategoriesComponent {
     }
 
     static viewCategory(categoryName) {
-        // Переходим на страницу товаров с параметром категории
         window.location.href = `products.html?category=${encodeURIComponent(categoryName)}`;
     }
 

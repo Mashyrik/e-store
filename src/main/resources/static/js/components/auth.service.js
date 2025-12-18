@@ -1,11 +1,8 @@
-// static/js/components/auth.service.js
-
 class AuthService {
     static async login(username, password) {
         console.log('AuthService: Attempting login for', username);
         
         try {
-            // Запрос к API
             const response = await fetch('http://localhost:8080/api/auth/login', {
                 method: 'POST',
                 headers: {
@@ -47,7 +44,6 @@ class AuthService {
                     const errorData = await response.json();
                     errorMessage = errorData.message || errorData.error || errorMessage;
                 } catch (e) {
-                    // Если не удалось распарсить JSON, используем статус ответа
                     errorMessage = `Ошибка сервера: ${response.status} ${response.statusText}`;
                 }
                 throw new Error(errorMessage);
@@ -59,7 +55,6 @@ class AuthService {
             
         } catch (error) {
             console.error('Registration failed:', error);
-            // Если это ошибка сети (failed to fetch), даем более понятное сообщение
             if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
                 throw new Error('Не удалось подключиться к серверу. Убедитесь, что сервер запущен на http://localhost:8080');
             }

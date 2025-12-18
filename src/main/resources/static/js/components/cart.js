@@ -1,91 +1,137 @@
-// static/js/components/cart.js
 console.log('🛒 Loading cart component...');
 
 class SimpleCart {
     constructor() {
         console.log('🛒 Creating new cart instance');
-        this.items = this.load();
-        console.log(`📦 Loaded ${this.items.length} items from storage`);
+        this.items = [];
+        this.totalAmount = 0;
+        this.totalItems = 0;
+        this.load();
     }
 
-    load() {
+    async load() {
         try {
-            const cartData = localStorage.getItem('cart');
-            const items = cartData ? JSON.parse(cartData) : [];
-            console.log(`📥 Cart loaded: ${items.length} items`);
-            return items;
+            if (!CartService || !CartService.isAuthenticated()) {
+                console.log('📥 User not authenticated, cart is empty');
+                this.items = [];
+                this.totalAmount = 0;
+                this.totalItems = 0;
+                return;
+            }
+
+            const cartData = await CartService.getCart();
+            this.items = (cartData.items || []).map(item => CartService.convertCartItemToUI(item));
+            this.totalAmount = cartData.totalAmount || 0;
+            this.totalItems = cartData.totalItems || 0;
+            console.log(`📥 Cart loaded from server: ${this.items.length} items`);
         } catch (error) {
             console.error('❌ Error loading cart:', error);
-            return [];
+            this.items = [];
+            this.totalAmount = 0;
+            this.totalItems = 0;
         }
     }
 
-    save() {
-        try {
-            localStorage.setItem('cart', JSON.stringify(this.items));
-            console.log(`💾 Cart saved: ${this.items.length} items`);
-
-            // Обновляем UI
-            if (typeof App !== 'undefined' && App.updateCartCount) {
-                App.updateCartCount();
-            }
-        } catch (error) {
-            console.error('❌ Error saving cart:', error);
+    async save() {
+        console.log('💾 Cart is stored on server');
+        
+        if (typeof App !== 'undefined' && App.updateCartCount) {
+            await App.updateCartCount();
         }
     }
 
-    add(product) {
+    async add(product) {
         console.log(`➕ Adding product to cart: ${product.name}`);
 
-        const existing = this.items.find(item => item.id === product.id);
-
-        if (existing) {
-            console.log(`📈 Increasing quantity for existing product: ${product.name}`);
-            existing.quantity += product.quantity || 1;
-        } else {
-            console.log(`🎁 Adding new product: ${product.name}`);
-            this.items.push({
-                ...product,
-                quantity: product.quantity || 1
-            });
+        if (!CartService || !CartService.isAuthenticated()) {
+            const errorMsg = 'Необходима авторизация для добавления товаров в корзину';
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification(errorMsg, 'error');
+            }
+            throw new Error(errorMsg);
         }
 
-        this.save();
+        try {
+            await CartService.addToCart(product.id, product.quantity || 1);
+            
+            await this.load();
 
-        // Показываем уведомление
-        if (typeof App !== 'undefined' && App.showNotification) {
-            App.showNotification(`"${product.name}" добавлен в корзину`, 'success');
-        } else {
-            console.log(`✅ "${product.name}" added to cart`);
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification(`"${product.name}" добавлен в корзину`, 'success');
+            } else {
+                console.log(`✅ "${product.name}" added to cart`);
+            }
+        } catch (error) {
+            console.error('❌ Error adding to cart:', error);
+            if (typeof App !== 'undefined' && App.showNotification) {
+                App.showNotification(error.message || 'Ошибка при добавлении товара в корзину', 'error');
+            }
+            throw error;
         }
     }
 
-    remove(id) {
+    async remove(id) {
         console.log(`➖ Removing product ${id} from cart`);
-        this.items = this.items.filter(item => item.id !== id);
-        this.save();
+
+        if (!CartService || !CartService.isAuthenticated()) {
+            throw new Error('Необходима авторизация для удаления товаров из корзины');
+        }
+
+        try {
+            await CartService.removeFromCart(id);
+            await this.load();
+        } catch (error) {
+            console.error('❌ Error removing from cart:', error);
+            throw error;
+        }
     }
 
-    clear() {
+    async clear() {
         console.log('🗑️ Clearing cart');
-        this.items = [];
-        this.save();
+
+        if (!CartService || !CartService.isAuthenticated()) {
+            this.items = [];
+            this.totalAmount = 0;
+            this.totalItems = 0;
+            return;
+        }
+
+        try {
+            await CartService.clearCart();
+            await this.load();
+        } catch (error) {
+            console.error('❌ Error clearing cart:', error);
+            throw error;
+        }
     }
 
     getCount() {
-        const count = this.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        const count = this.totalItems || this.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
         console.log(`📊 Cart count: ${count} items`);
         return count;
     }
 
     getTotal() {
-        const total = this.items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+        const total = this.totalAmount || this.items.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
         console.log(`💰 Cart total: ${total}`);
         return total;
     }
+
+    async updateQuantity(productId, quantity) {
+        if (!CartService || !CartService.isAuthenticated()) {
+            throw new Error('Необходима авторизация для обновления корзины');
+        }
+
+        try {
+            await CartService.updateCartItem(productId, quantity);
+            await this.load();
+        } catch (error) {
+            console.error('❌ Error updating cart item:', error);
+            throw error;
+        }
+    }
 }
 
-// Создаем глобальную корзину
 window.cart = new SimpleCart();
 window.SimpleCart = SimpleCart;
 console.log('✅ Cart component loaded');

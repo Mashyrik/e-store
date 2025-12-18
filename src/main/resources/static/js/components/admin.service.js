@@ -1,6 +1,4 @@
 class AdminService {
-    // ============ ПОЛЬЗОВАТЕЛИ ============
-
     static async getUsers(forceRefresh = false) {
         try {
             const token = localStorage.getItem('token');
@@ -8,7 +6,6 @@ class AdminService {
                 throw new Error('Необходима авторизация. Войдите в систему.');
             }
 
-            // Загружаем пользователей из API
             const response = await fetch('http://localhost:8080/api/admin/users', {
                 method: 'GET',
                 headers: {
@@ -43,7 +40,6 @@ class AdminService {
     static async updateUserRole(userId, newRole) {
         try {
             console.log(`Updating user ${userId} role to ${newRole}`);
-            // Пока просто симулируем успешное обновление
             return {
                 success: true,
                 message: 'Роль пользователя обновлена'
@@ -94,7 +90,6 @@ class AdminService {
     static async deleteUser(userId) {
         try {
             console.log(`Deleting user ${userId}`);
-            // Пока просто симулируем успешное удаление
             return {
                 success: true,
                 message: 'Пользователь удален'
@@ -108,11 +103,8 @@ class AdminService {
         }
     }
 
-    // ============ ТОВАРЫ ============
-
     static async getProducts() {
         try {
-            // Загружаем товары из API
             const response = await fetch('http://localhost:8080/api/products', {
                 method: 'GET',
                 headers: {
@@ -127,7 +119,6 @@ class AdminService {
             const products = await response.json();
             console.log('Products loaded from API for admin:', products.length);
             
-            // Преобразуем товары в нужный формат для админ-панели
             return products.map(product => ({
                 id: product.id,
                 name: product.name,
@@ -174,7 +165,6 @@ class AdminService {
                     product: product
                 };
             } catch (apiError) {
-                // Если API недоступен, используем демо-режим
                 if (apiError.message.includes('Failed to fetch') || apiError.message.includes('NetworkError')) {
                     console.warn('API недоступен, используем демо-режим');
                     return {
@@ -226,7 +216,6 @@ class AdminService {
                     product: product
                 };
             } catch (apiError) {
-                // Если API недоступен, используем демо-режим
                 if (apiError.message.includes('Failed to fetch') || apiError.message.includes('NetworkError')) {
                     console.warn('API недоступен, используем демо-режим');
                     return {
@@ -248,7 +237,6 @@ class AdminService {
     static async deleteProduct(productId) {
         try {
             console.log(`Deleting product ${productId}`);
-            // Пока просто симулируем успешное удаление
             return {
                 success: true,
                 message: 'Товар удален'
@@ -261,8 +249,6 @@ class AdminService {
             };
         }
     }
-
-    // ============ КАТЕГОРИИ ============
 
     static async getCategories() {
         try {
@@ -334,8 +320,6 @@ class AdminService {
             };
         }
     }
-
-    // ============ ЗАКАЗЫ ============
 
     static async getOrders(statusFilter = 'all', forceRefresh = false) {
         try {
@@ -422,18 +406,14 @@ class AdminService {
         }
     }
 
-    // ============ СТАТИСТИКА ============
-
     static async getStats() {
         try {
-            // Получаем реальные данные для статистики
             const users = await this.getUsers();
             const orders = await this.getOrders('all');
             const products = await this.getProducts();
             
             const pendingOrders = orders.filter(o => o.status === 'PENDING').length;
             
-            // Вычисляем выручку за сегодня
             const today = new Date();
             const todayOrders = orders.filter(o => {
                 const orderDate = new Date(o.createdAt);
@@ -441,7 +421,6 @@ class AdminService {
             });
             const todayRevenue = todayOrders.reduce((sum, o) => sum + (parseFloat(o.totalAmount) || 0), 0);
             
-            // Вычисляем месячную выручку
             const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
             const monthlyOrders = orders.filter(o => {
                 const orderDate = new Date(o.createdAt);
@@ -455,16 +434,13 @@ class AdminService {
                 todayRevenue: todayRevenue,
                 pendingOrders: pendingOrders,
                 monthlyRevenue: monthlyRevenue,
-                popularProducts: [] // Можно добавить логику для популярных товаров в будущем
+                popularProducts: []
             };
         } catch (error) {
             console.error('Failed to load stats:', error);
             throw error;
         }
     }
-
-
-    // ============ УТИЛИТЫ ============
 
     static formatPrice(price) {
         return new Intl.NumberFormat('ru-RU').format(price) + ' BYN';
@@ -487,7 +463,6 @@ class AdminService {
         if (!dateString) return 'Не указана';
         
         try {
-            // Если дата в формате "yyyy-MM-dd HH:mm:ss", нужно заменить пробел на 'T'
             let dateValue = dateString;
             if (typeof dateString === 'string' && dateString.includes(' ') && !dateString.includes('T')) {
                 dateValue = dateString.replace(' ', 'T');
@@ -495,7 +470,6 @@ class AdminService {
             
             const date = new Date(dateValue);
             
-            // Проверяем, что дата валидна
             if (isNaN(date.getTime())) {
                 console.warn('Invalid date:', dateString);
                 return dateString;
